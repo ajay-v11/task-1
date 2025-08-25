@@ -1,3 +1,4 @@
+// models/Card.ts
 import mongoose, {Schema} from 'mongoose';
 import {ICard} from '../interfaces/interfaces';
 
@@ -5,8 +6,7 @@ const cardSchema = new Schema<ICard>(
   {
     // User Profile Information
     profilePicture: {
-      type: String,
-      trim: true,
+      type: Buffer, // Updated type to Buffer
     },
     fullName: {
       type: String,

@@ -1,3 +1,4 @@
+// interfaces/interfaces.ts
 import mongoose, {Document} from 'mongoose';
 import {UserRole} from '../constants/roles';
 
@@ -17,7 +18,7 @@ export interface IUser extends Document {
 export interface ICard extends Document {
   _id: string;
   // User Profile Information
-  profilePicture?: string;
+  profilePicture?: Buffer; // Updated type to Buffer
   fullName: string;
   title: string;
   location: string;

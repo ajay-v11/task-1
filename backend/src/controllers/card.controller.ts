@@ -62,7 +62,6 @@ export const createCard = async (
     }
 
     const {
-      profilePicture,
       fullName,
       title,
       location,
@@ -75,6 +74,9 @@ export const createCard = async (
       gallery,
       assignedTo,
     } = req.body;
+
+    // The profile picture is now handled by Multer middleware
+    const profilePicture = req.file ? req.file.buffer : undefined;
 
     // Validate required fields
     if (
@@ -124,6 +126,7 @@ export const createCard = async (
     next(error);
   }
 };
+
 export const updateCard = async (
   req: AuthRequest,
   res: Response,
@@ -174,7 +177,6 @@ export const updateCard = async (
     }
 
     const {
-      profilePicture,
       fullName,
       title,
       location,
@@ -188,26 +190,31 @@ export const updateCard = async (
       assignedTo,
     } = req.body;
 
+    const updateData: any = {
+      fullName,
+      title,
+      location,
+      companyName,
+      description,
+      contact,
+      socialLinks,
+      services,
+      products,
+      gallery,
+      assignedTo,
+      lastUpdatedAt: new Date(),
+    };
+
+    // If a new file is uploaded, update the profile picture
+    if (req.file) {
+      updateData.profilePicture = req.file.buffer;
+    }
+
     // Update the card
-    const updatedCard = await Card.findByIdAndUpdate(
-      id,
-      {
-        profilePicture,
-        fullName,
-        title,
-        location,
-        companyName,
-        description,
-        contact,
-        socialLinks,
-        services,
-        products,
-        gallery,
-        assignedTo,
-        lastUpdatedAt: new Date(),
-      },
-      {new: true, runValidators: true}
-    )
+    const updatedCard = await Card.findByIdAndUpdate(id, updateData, {
+      new: true,
+      runValidators: true,
+    })
       .populate('createdBy', 'firstName lastName email role')
       .populate('assignedTo', 'firstName lastName email role');
 

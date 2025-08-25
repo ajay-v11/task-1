@@ -6,6 +6,7 @@ import {authRoutes} from './routes/auth.route';
 import {cardRoutes} from './routes/card.route';
 import {userRoutes} from './routes/user.route';
 import morgan from 'morgan';
+import multer from 'multer';
 const app = express();
 
 //Security middlewares
@@ -30,10 +31,13 @@ app.use('/api/', limiter);
 //Body parser middleware
 app.use(express.json({limit: '10mb'}));
 app.use(express.urlencoded({extended: true, limit: '10mb'}));
+// Configure multer for in-memory storage
+const storage = multer.memoryStorage();
+const upload = multer({storage});
 
 //Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/card', cardRoutes);
+app.use('/api/cards', cardRoutes);
 app.use('/api/users', userRoutes);
 
 app.get('/api/health', (req: Request, res: Response) => {
