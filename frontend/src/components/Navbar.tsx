@@ -5,7 +5,7 @@ import {useAuthStore} from '../lib/authStore';
 export default function Navbar() {
   const navigate = useNavigate();
   const {user, isAuthenticated, logout} = useAuthStore();
-  console.log('Log from the navbar', user, isAuthenticated);
+  console.log('log form nav', user, isAuthenticated);
 
   const handleLogin = () => {
     navigate('/login');

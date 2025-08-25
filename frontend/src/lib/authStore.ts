@@ -40,9 +40,6 @@ export const useAuthStore = create<AuthState>((set) => ({
       const {data} = response.data;
       const {user, token} = data;
 
-      console.log('thr response after login', response.data);
-      console.log(user, token);
-
       localStorage.setItem('auth_token', token);
 
       set({

@@ -8,7 +8,46 @@ export interface User {
   createdAt: string;
   updatedAt: string;
 }
+// types/types.ts
 
+export type Card = {
+  _id: string;
+  profilePicture?: string; // The buffer will be converted to a base64 string
+  fullName: string;
+  title: string;
+  location: string;
+  companyName: string;
+  description: string;
+  contact: {
+    phone?: string;
+    email: string;
+  };
+  socialLinks?: {
+    instagram?: string;
+    facebook?: string;
+    twitter?: string;
+  };
+  services?: string[];
+  products?: string[];
+  gallery?: string[];
+  assignedTo: {
+    // You populate these fields, so they will be objects on the frontend
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    role: string;
+  };
+  createdBy: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    role: string;
+  };
+  lastUpdatedAt: string; // Dates will be strings
+  createdAt: string; // Dates will be strings
+};
 // Login form data interface
 export interface LoginCredentials {
   email: string;
