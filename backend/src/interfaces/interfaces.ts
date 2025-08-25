@@ -16,8 +16,33 @@ export interface IUser extends Document {
 
 export interface ICard extends Document {
   _id: string;
+  // User Profile Information
+  profilePicture?: string;
+  fullName: string;
   title: string;
+  location: string;
+  companyName: string;
   description: string;
+
+  // Contact Information
+  contact: {
+    phone?: string;
+    email: string;
+  };
+
+  // Social Links (optional)
+  socialLinks?: {
+    instagram?: string;
+    facebook?: string;
+    twitter?: string;
+  };
+
+  // Optional sections
+  services?: string[];
+  products?: string[];
+  gallery?: string[];
+
+  // System fields
   assignedTo: mongoose.Types.ObjectId;
   createdBy: mongoose.Types.ObjectId;
   lastUpdatedAt: Date;

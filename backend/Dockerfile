@@ -1,20 +1,39 @@
-# Use official Node.js LTS image
-FROM node:20-alpine
+# Use official lightweight Node.js image
+FROM node:20-alpine AS builder
 
 # Set working directory
 WORKDIR /app
 
-# Copy package files
+# Copy package files first (better caching)
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install --production
+# Install all dependencies (including dev for build step)
+RUN npm install
 
 # Copy source code
 COPY . .
 
-# Expose port (Cloud Run expects PORT env var)
+# Build TypeScript into dist/
+RUN npm run build
+
+# -------- Production stage --------
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy only package files again and install only prod dependencies
+COPY package*.json ./
+RUN npm install --production
+
+# Copy compiled code from builder
+COPY --from=builder /app/dist ./dist
+
+# Set environment variables
+ENV NODE_ENV=production
 ENV PORT=8080
 
-# Start the app
-CMD ["npm", "start"]
+# Expose Cloud Run port
+EXPOSE 8080
+
+# Start server
+CMD ["node", "dist/server.js"]

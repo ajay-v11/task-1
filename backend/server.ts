@@ -5,7 +5,7 @@ import {connectDatabase} from './src/config/db';
 
 dotenv.config();
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 
 // Connect DB first
 connectDatabase();
