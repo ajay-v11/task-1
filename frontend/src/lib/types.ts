@@ -1,3 +1,5 @@
+// types/types.ts
+
 // User interface based on backend User model
 export interface User {
   _id: string;
@@ -8,11 +10,11 @@ export interface User {
   createdAt: string;
   updatedAt: string;
 }
-// types/types.ts
 
+// Card interface
 export type Card = {
   _id: string;
-  profilePicture?: string; // The buffer will be converted to a base64 string
+  profilePicture?: string;
   fullName: string;
   title: string;
   location: string;
@@ -31,7 +33,6 @@ export type Card = {
   products?: string[];
   gallery?: string[];
   assignedTo: {
-    // You populate these fields, so they will be objects on the frontend
     _id: string;
     firstName: string;
     lastName: string;
@@ -45,9 +46,10 @@ export type Card = {
     email: string;
     role: string;
   };
-  lastUpdatedAt: string; // Dates will be strings
-  createdAt: string; // Dates will be strings
+  lastUpdatedAt: string;
+  createdAt: string;
 };
+
 // Login form data interface
 export interface LoginCredentials {
   email: string;
@@ -63,32 +65,27 @@ export interface UserRegistrationData {
   role: 'user' | 'manager';
 }
 
-// Generic API response data (the 'data' property of the response)
-// This is the common structure for both login and registration
+// Auth data that comes back from login/register
 export interface AuthData {
   user: User;
   token: string;
 }
 
 // Generic API response wrapper for success cases
-// This now correctly reflects the outer structure of the response
 export interface ApiResponse<T> {
   success: true;
   message: string;
-  data: T; // The 'data' property is now generic, holding the actual payload
+  data: T;
 }
 
-// Login API response interface, using the generic wrapper
-// It specifies that the 'data' property contains the AuthData
+// Login API response
 export type LoginResponse = ApiResponse<AuthData>;
 
-// Admin registration API response interface, using the generic wrapper
-// It also specifies that the 'data' property contains the AuthData
+// Registration API response
 export type UserRegistrationResponse = ApiResponse<AuthData>;
 
-// Error response interface for API errors
-// This one seems correct already as it does not have the 'data' property
-export interface ApiError {
+// Error response interface - simplified to match actual usage
+export interface ApiErrorResponse {
   success: false;
   message: string;
   errors?: Record<string, string[]>;

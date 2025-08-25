@@ -1,6 +1,6 @@
 import React, {useState, useEffect} from 'react';
 import {Link, useNavigate} from 'react-router-dom';
-import {useAuthStore} from '../lib/authStore';
+import {useAuth} from '../lib/authContext';
 import {
   userRegistrationSchema,
   type UserRegistrationFormData,
@@ -11,8 +11,7 @@ import Footer from '../components/Footer';
 
 export default function UserRegisterPage() {
   const navigate = useNavigate();
-  const {createAdmin, isLoading, error, isAuthenticated, clearError} =
-    useAuthStore();
+  const {createAdmin, state, clearError} = useAuth();
 
   const [formData, setFormData] = useState<UserRegistrationFormData>({
     email: '',
@@ -29,10 +28,10 @@ export default function UserRegisterPage() {
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated) {
+    if (state.isAuthenticated) {
       navigate('/');
     }
-  }, [isAuthenticated, navigate]);
+  }, [state.isAuthenticated, navigate]);
 
   // Clear errors when component mounts or form data changes
   useEffect(() => {
@@ -121,7 +120,7 @@ export default function UserRegisterPage() {
                   placeholder='First Name'
                   value={formData.firstName}
                   onChange={handleInputChange}
-                  disabled={isLoading || isSubmitting}
+                  disabled={state.isLoading || isSubmitting}
                 />
                 {validationErrors.firstName && (
                   <p className='mt-1 text-sm text-red-600'>
@@ -150,7 +149,7 @@ export default function UserRegisterPage() {
                   placeholder='Last Name'
                   value={formData.lastName}
                   onChange={handleInputChange}
-                  disabled={isLoading || isSubmitting}
+                  disabled={state.isLoading || isSubmitting}
                 />
                 {validationErrors.lastName && (
                   <p className='mt-1 text-sm text-red-600'>
@@ -179,7 +178,7 @@ export default function UserRegisterPage() {
                   placeholder='Email address'
                   value={formData.email}
                   onChange={handleInputChange}
-                  disabled={isLoading || isSubmitting}
+                  disabled={state.isLoading || isSubmitting}
                 />
                 {validationErrors.email && (
                   <p className='mt-1 text-sm text-red-600'>
@@ -208,7 +207,7 @@ export default function UserRegisterPage() {
                   placeholder='Password (min 6 characters)'
                   value={formData.password}
                   onChange={handleInputChange}
-                  disabled={isLoading || isSubmitting}
+                  disabled={state.isLoading || isSubmitting}
                 />
                 {validationErrors.password && (
                   <p className='mt-1 text-sm text-red-600'>
@@ -232,7 +231,7 @@ export default function UserRegisterPage() {
                   } text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
                   value={formData.role}
                   onChange={handleInputChange}
-                  disabled={isLoading || isSubmitting}>
+                  disabled={state.isLoading || isSubmitting}>
                   <option value='user'>User</option>
                   <option value='admin'>Admin</option>
                   <option value='moderator'>Moderator</option>
@@ -245,7 +244,7 @@ export default function UserRegisterPage() {
               </div>
             </div>
 
-            {error && (
+            {state.error && (
               <div className='rounded-md bg-red-50 p-4'>
                 <div className='flex'>
                   <div className='ml-3'>
@@ -253,7 +252,7 @@ export default function UserRegisterPage() {
                       Registration failed
                     </h3>
                     <div className='mt-2 text-sm text-red-700'>
-                      <p>{error}</p>
+                      <p>{state.error}</p>
                     </div>
                   </div>
                 </div>
@@ -263,9 +262,9 @@ export default function UserRegisterPage() {
             <div>
               <button
                 type='submit'
-                disabled={isLoading || isSubmitting}
+                disabled={state.isLoading || isSubmitting}
                 className='group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed'>
-                {isLoading || isSubmitting ? (
+                {state.isLoading || isSubmitting ? (
                   <>
                     <svg
                       className='animate-spin -ml-1 mr-3 h-5 w-5 text-white'

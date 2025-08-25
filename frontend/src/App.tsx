@@ -1,21 +1,15 @@
+// src/App.tsx
 import {Routes, Route} from 'react-router-dom';
+import {AuthProvider} from './lib/authContext';
 import LoginPage from './pages/LoginPage';
 import UserRegisterPage from './pages/UserRegisterPage';
 import PageComponent from './pages/MainPage';
 import ProtectedRoute from './components/ProtectedWrapper';
-import {useAuthStore} from './lib/authStore';
-import {useEffect} from 'react';
 import ProfilePage from './pages/ProfilePage';
 
 function App() {
-  const {initializeAuth} = useAuthStore();
-
-  useEffect(() => {
-    initializeAuth();
-  }, []);
-
   return (
-    <>
+    <AuthProvider>
       <Routes>
         <Route
           path='/'
@@ -36,7 +30,7 @@ function App() {
           }
         />
       </Routes>
-    </>
+    </AuthProvider>
   );
 }
 

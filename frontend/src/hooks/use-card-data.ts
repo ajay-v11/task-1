@@ -1,93 +1,125 @@
+// src/hooks/useCardData.ts
+
 import {useState, useEffect, useMemo} from 'react';
-import {useAuthStore} from '../lib/authStore';
 import api from '../lib/api';
 import type {Card} from '../lib/types';
+import {useAuth} from '../lib/authContext';
 
 export const useCardData = () => {
-  const {user, isAuthenticated, isLoading: authLoading} = useAuthStore();
-  const [cards, setCards] = useState<Card[] | null>(null);
-  const [loading, setLoading] = useState(true);
+  const {state} = useAuth();
+  const [cards, setCards] = useState<Card[]>([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Don't fetch if auth is still loading
-    if (authLoading) {
-      return;
-    }
-
-    // If not authenticated, clear data and stop loading
-    if (!isAuthenticated) {
-      setCards(null);
+  const fetchCards = async () => {
+    if (!state.isAuthenticated || !state.user) {
+      setCards([]);
       setLoading(false);
+      setError(null);
       return;
     }
 
-    // If no user, wait
-    if (!user) {
+    try {
       setLoading(true);
+      setError(null);
+
+      const response = await api.get('/cards');
+
+      let cardsData: Card[] = [];
+
+      // Handle different API response structures
+      if (response.data?.success && response.data?.data?.cards) {
+        // Structure: { success: true, data: { cards: Card[] } }
+        cardsData = response.data.data.cards;
+      } else if (response.data?.data?.cards) {
+        // Structure: { data: { cards: Card[] } }
+        cardsData = response.data.data.cards;
+      } else if (response.data?.cards) {
+        // Structure: { cards: Card[] }
+        cardsData = response.data.cards;
+      } else if (Array.isArray(response.data)) {
+        // Structure: Card[]
+        cardsData = response.data;
+      } else {
+        // No cards or unexpected structure
+        cardsData = [];
+      }
+
+      setCards(cardsData);
+    } catch (err: any) {
+      console.error('Failed to fetch cards:', err);
+      const errorMessage =
+        err?.response?.data?.message ||
+        err?.message ||
+        'Failed to load cards. Please try again.';
+      setError(errorMessage);
+      setCards([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch cards when auth state changes
+  useEffect(() => {
+    // Don't fetch if still initializing
+    if (!state.isInitialized) {
       return;
     }
 
-    const fetchCards = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+    // Clear data if not authenticated
+    if (!state.isAuthenticated || !state.user) {
+      setCards([]);
+      setLoading(false);
+      setError(null);
+      return;
+    }
 
-        const response = await api.get<{
-          success: boolean;
-          data: {cards: Card[]};
-        }>('/cards');
-
-        // Handle the nested response structure based on your API response
-        if (
-          response.data &&
-          response.data.success &&
-          response.data.data &&
-          response.data.data.cards
-        ) {
-          setCards(response.data.data.cards);
-        } else {
-          // Fallback for different response structure
-          const cardsData = response.data?.data?.cards || [];
-          setCards(cardsData);
-        }
-
-        setError(null);
-      } catch (err) {
-        console.error('Failed to fetch cards:', err);
-        setError('Failed to load card data. Please try again.');
-        setCards(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
+    // Fetch cards if authenticated
     fetchCards();
-  }, [isAuthenticated, authLoading, user]); // Added user to dependency array
+  }, [state.isAuthenticated, state.user, state.isInitialized]);
 
-  // Use useMemo to re-calculate myCard only when cards or user changes
+  // Find user's assigned card
   const myCard = useMemo(() => {
-    if (!cards || !user) {
-      console.log('No cards or user, returning null');
-      return null;
-    }
-    if (!cards || !user) {
+    if (!state.user || cards.length === 0) {
       return null;
     }
 
-    const userCard =
-      cards.find((card) => card.assignedTo?._id === user._id) || null;
+    return (
+      cards.find((card) => card.assignedTo?._id === state.user?._id) || null
+    );
+  }, [cards, state.user]);
 
-    if (user.role === 'user') {
-      console.log('User card found:', userCard);
-    } else if (user.role === 'manager') {
-      console.log('Manager card found:', userCard);
-    } else if (user.role === 'admin') {
-      console.log('Admin card found:', userCard);
+  // Calculate statistics
+  const stats = useMemo(() => {
+    return {
+      total: cards.length,
+      assigned: cards.filter((card) => card.assignedTo).length,
+      unassigned: cards.filter((card) => !card.assignedTo).length,
+    };
+  }, [cards]);
+
+  // Manual refresh function
+  const refreshCards = () => {
+    if (state.isAuthenticated && state.user) {
+      fetchCards();
     }
+  };
 
-    return userCard;
-  }, [cards, user]);
+  return {
+    // Data
+    cards,
+    myCard,
+    loading,
+    error,
+    stats,
 
-  return {cards, myCard, loading, error, userRole: user?.role};
+    // Functions
+    refreshCards,
+
+    // Helper properties
+    hasCards: cards.length > 0,
+    userRole: state.user?.role || null,
+    isAuthenticated: state.isAuthenticated,
+    isInitialized: state.isInitialized,
+  };
 };

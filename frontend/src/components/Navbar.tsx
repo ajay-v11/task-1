@@ -1,11 +1,10 @@
 import {Menu, User, LogOut} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
-import {useAuthStore} from '../lib/authStore';
+import {useAuth} from '../lib/authContext';
 
 export default function Navbar() {
   const navigate = useNavigate();
-  const {user, isAuthenticated, logout} = useAuthStore();
-  console.log('log form nav', user, isAuthenticated);
+  const {state, logout} = useAuth();
 
   const handleLogin = () => {
     navigate('/login');
@@ -20,18 +19,22 @@ export default function Navbar() {
     navigate('/profile');
   };
 
-  // Helper function to get full name
-  const getFullName = () => {
-    if (!user) return 'Profile';
-    const firstName = user.firstName || '';
-    const lastName = user.lastName || '';
-    return `${firstName} ${lastName}`.trim() || 'Profile';
+  // Helper function to get display name
+  const getDisplayName = () => {
+    if (!state.user) return 'Profile';
+    const firstName = state.user.firstName || '';
+    const lastName = state.user.lastName || '';
+    return firstName || `${firstName} ${lastName}`.trim() || 'Profile';
   };
 
-  // Helper function to get display name (for shorter displays)
-  const getDisplayName = () => {
-    if (!user) return 'Profile';
-    return user.firstName || 'Profile';
+  // Helper function for full name with role
+  const getFullNameWithRole = () => {
+    if (!state.user) return 'Profile';
+    const firstName = state.user.firstName || '';
+    const lastName = state.user.lastName || '';
+    const fullName = `${firstName} ${lastName}`.trim() || 'User';
+    const role = state.user.role || 'user';
+    return `${fullName} (${role})`;
   };
 
   return (
@@ -50,11 +53,11 @@ export default function Navbar() {
           {/* Desktop Navigation */}
           <div className='hidden md:block'>
             <div className='ml-10 flex items-baseline space-x-8'>
-              <a
-                href='#'
+              <button
+                onClick={() => navigate('/')}
                 className='text-gray-700 hover:text-gray-900 px-3 py-2 text-sm font-medium transition-colors'>
                 Home
-              </a>
+              </button>
               <a
                 href='#'
                 className='text-gray-700 hover:text-gray-900 px-3 py-2 text-sm font-medium transition-colors'>
@@ -70,7 +73,7 @@ export default function Navbar() {
                 className='text-gray-700 hover:text-gray-900 px-3 py-2 text-sm font-medium transition-colors'>
                 Business
               </a>
-              {user?.role === 'admin' && (
+              {state.isAuthenticated && state.user?.role === 'admin' && (
                 <button
                   onClick={() => navigate('/register')}
                   className='text-gray-700 hover:text-gray-900 px-3 py-2 text-sm font-medium transition-colors'>
@@ -82,22 +85,20 @@ export default function Navbar() {
 
           {/* Auth Actions */}
           <div className='flex items-center space-x-4'>
-            {isAuthenticated ? (
+            {state.isAuthenticated && state.user ? (
               // Authenticated user actions
               <>
-                {/* Profile Icon with role indicator */}
+                {/* Profile Button */}
                 <button
                   onClick={handleProfile}
                   className='flex items-center space-x-2 text-gray-700 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors'
-                  title={`${getFullName()} (${user?.role || 'user'})`}>
+                  title={getFullNameWithRole()}>
                   <User className='h-5 w-5' />
                   <div className='hidden sm:block text-sm'>
                     <span className='font-medium'>{getDisplayName()}</span>
-                    {user?.role && (
-                      <span className='ml-1 text-xs text-gray-500 capitalize'>
-                        ({user.role})
-                      </span>
-                    )}
+                    <span className='ml-1 text-xs text-gray-500 capitalize'>
+                      ({state.user.role})
+                    </span>
                   </div>
                 </button>
 
@@ -112,18 +113,11 @@ export default function Navbar() {
               </>
             ) : (
               // Non-authenticated user actions
-              <>
-                <button
-                  onClick={handleLogin}
-                  className='bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full text-sm font-medium transition-colors'>
-                  Login
-                </button>
-                {/* <button
-                  onClick={() => navigate('/register')}
-                  className='border border-blue-600 text-blue-600 hover:bg-blue-50 px-6 py-2 rounded-full text-sm font-medium transition-colors'>
-                  Register
-                </button> */}
-              </>
+              <button
+                onClick={handleLogin}
+                className='bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full text-sm font-medium transition-colors'>
+                Login
+              </button>
             )}
 
             {/* Mobile menu button */}

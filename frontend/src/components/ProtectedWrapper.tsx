@@ -1,14 +1,17 @@
+// src/components/ProtectedRoute.tsx
+
 import {Navigate} from 'react-router-dom';
-import {useAuthStore} from '../lib/authStore';
+import {useAuth} from '../lib/authContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
 export default function ProtectedRoute({children}: ProtectedRouteProps) {
-  const {isAuthenticated, isLoading} = useAuthStore();
+  const {state} = useAuth();
 
-  if (isLoading) {
+  // Show loading while initializing or during auth operations
+  if (!state.isInitialized || state.isLoading) {
     return (
       <div className='flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100'>
         <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500'></div>
@@ -17,11 +20,11 @@ export default function ProtectedRoute({children}: ProtectedRouteProps) {
     );
   }
 
-  // If not authenticated (and no longer loading), redirect to the login page.
-  if (!isAuthenticated) {
+  // Redirect to login if not authenticated
+  if (!state.isAuthenticated) {
     return <Navigate to='/login' replace />;
   }
 
-  // If authenticated, render the child components (the protected content).
-  return children;
+  // Render protected content
+  return <>{children}</>;
 }
