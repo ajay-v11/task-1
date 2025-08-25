@@ -1,8 +1,10 @@
 import React, {useState, useEffect} from 'react';
-import {Link, useNavigate} from 'react-router-dom';
+import {useNavigate} from 'react-router-dom';
 import {useAuthStore} from '../lib/authStore';
 import {loginSchema, type LoginFormData} from '../lib/schema';
 import {ZodError} from 'zod';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -12,20 +14,17 @@ export default function LoginPage() {
     email: '',
     password: '',
   });
-
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string>
   >({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Redirect if already authenticated
+  // Redirect if authenticated
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/');
-    }
+    if (isAuthenticated) navigate('/');
   }, [isAuthenticated, navigate]);
 
-  // Clear errors when component mounts or form data changes
+  // Clear errors on mount or form change
   useEffect(() => {
     clearError();
     setValidationErrors({});
@@ -33,10 +32,7 @@ export default function LoginPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const {name, value} = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({...prev, [name]: value}));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,49 +41,35 @@ export default function LoginPage() {
     setValidationErrors({});
 
     try {
-      // Validate form data with Zod
       const validatedData = loginSchema.parse(formData);
-
-      // Attempt login
       await login(validatedData);
-
-      // Navigation will be handled by the useEffect above
     } catch (error) {
       if (error instanceof ZodError) {
-        // Handle validation errors
         const errors: Record<string, string> = {};
         error.issues.forEach((issue) => {
-          if (issue.path[0]) {
-            errors[issue.path[0] as string] = issue.message;
-          }
+          if (issue.path[0]) errors[issue.path[0] as string] = issue.message;
         });
         setValidationErrors(errors);
       }
-      // API errors are handled by the auth store
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className='min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8'>
-      <div className='max-w-md w-full space-y-8'>
-        <div>
-          <h2 className='mt-6 text-center text-3xl font-extrabold text-gray-900'>
+    <div className='min-h-screen flex flex-col bg-gray-50'>
+      {/* NAVBAR */}
+      <Navbar />
+
+      {/* LOGIN CARD */}
+      <main className='flex-grow flex items-center justify-center px-4'>
+        <div className='max-w-md w-full bg-white rounded-2xl shadow-lg p-8'>
+          <h2 className='text-center text-2xl font-bold text-gray-800 mb-6'>
             Sign in to your account
           </h2>
-          <p className='mt-2 text-center text-sm text-gray-600'>
-            Or{' '}
-            <Link
-              to='/admin/register'
-              className='font-medium text-indigo-600 hover:text-indigo-500'>
-              create the first admin account
-            </Link>
-          </p>
-        </div>
 
-        <form className='mt-8 space-y-6' onSubmit={handleSubmit}>
-          <div className='rounded-md shadow-sm -space-y-px'>
+          <form className='space-y-5' onSubmit={handleSubmit}>
+            {/* Email */}
             <div>
               <label htmlFor='email' className='sr-only'>
                 Email address
@@ -98,9 +80,9 @@ export default function LoginPage() {
                 type='email'
                 autoComplete='email'
                 required
-                className={`appearance-none rounded-none relative block w-full px-3 py-2 border ${
-                  validationErrors.email ? 'border-red-300' : 'border-gray-300'
-                } placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
+                className={`w-full rounded-lg border px-3 py-2 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  validationErrors.email ? 'border-red-400' : 'border-gray-300'
+                }`}
                 placeholder='Email address'
                 value={formData.email}
                 onChange={handleInputChange}
@@ -113,6 +95,7 @@ export default function LoginPage() {
               )}
             </div>
 
+            {/* Password */}
             <div>
               <label htmlFor='password' className='sr-only'>
                 Password
@@ -123,11 +106,11 @@ export default function LoginPage() {
                 type='password'
                 autoComplete='current-password'
                 required
-                className={`appearance-none rounded-none relative block w-full px-3 py-2 border ${
+                className={`w-full rounded-lg border px-3 py-2 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   validationErrors.password
-                    ? 'border-red-300'
+                    ? 'border-red-400'
                     : 'border-gray-300'
-                } placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
+                }`}
                 placeholder='Password'
                 value={formData.password}
                 onChange={handleInputChange}
@@ -139,28 +122,19 @@ export default function LoginPage() {
                 </p>
               )}
             </div>
-          </div>
 
-          {error && (
-            <div className='rounded-md bg-red-50 p-4'>
-              <div className='flex'>
-                <div className='ml-3'>
-                  <h3 className='text-sm font-medium text-red-800'>
-                    Login failed
-                  </h3>
-                  <div className='mt-2 text-sm text-red-700'>
-                    <p>{error}</p>
-                  </div>
-                </div>
+            {/* API error */}
+            {error && (
+              <div className='rounded-lg bg-red-50 p-3 text-red-700 text-sm'>
+                <strong>Login failed:</strong> {error}
               </div>
-            </div>
-          )}
+            )}
 
-          <div>
+            {/* Submit */}
             <button
               type='submit'
               disabled={isLoading || isSubmitting}
-              className='group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed'>
+              className='w-full flex justify-center items-center py-2 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50'>
               {isLoading || isSubmitting ? (
                 <>
                   <svg
@@ -178,7 +152,8 @@ export default function LoginPage() {
                     <path
                       className='opacity-75'
                       fill='currentColor'
-                      d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'></path>
+                      d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 
+                         3.042 1.135 5.824 3 7.938l3-2.647z'></path>
                   </svg>
                   Signing in...
                 </>
@@ -186,9 +161,12 @@ export default function LoginPage() {
                 'Sign in'
               )}
             </button>
-          </div>
-        </form>
-      </div>
+          </form>
+        </div>
+      </main>
+
+      {/* FOOTER */}
+      <Footer />
     </div>
   );
 }
