@@ -22,7 +22,7 @@ app.use(
 app.use(morgan('dev'));
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, //15 minutes
-  max: 200,
+  max: 1000,
   message: 'Too many requests,please try again',
 });
 

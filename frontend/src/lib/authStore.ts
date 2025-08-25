@@ -26,7 +26,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   token: null,
   isAuthenticated: false,
-  isLoading: false,
+  isLoading: true,
   error: null,
 
   login: async (credentials: LoginCredentials) => {
@@ -37,12 +37,14 @@ export const useAuthStore = create<AuthState>((set) => ({
         '/auth/login',
         credentials
       );
-      const {user, token} = response.data;
+      const {data} = response.data;
+      const {user, token} = data;
 
-      // Store token in localStorage
+      console.log('thr response after login', response.data);
+      console.log(user, token);
+
       localStorage.setItem('auth_token', token);
 
-      // Update state
       set({
         user,
         token,
@@ -71,12 +73,11 @@ export const useAuthStore = create<AuthState>((set) => ({
         '/auth/create-user',
         adminData
       );
-      const {user, token} = response.data;
+      const {data} = response.data;
+      const {user, token} = data;
 
-      // Store token in localStorage
       localStorage.setItem('auth_token', token);
 
-      // Update state
       set({
         user,
         token,
@@ -98,10 +99,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   logout: () => {
-    // Clear token from localStorage
     localStorage.removeItem('auth_token');
 
-    // Reset state
     set({
       user: null,
       token: null,
@@ -112,33 +111,38 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   initializeAuth: () => {
-    const token = localStorage.getItem('auth_token');
+    const storedToken = localStorage.getItem('auth_token');
 
-    if (token) {
-      set({isLoading: true});
+    if (storedToken) {
+      // 💡 Crucial Fix: Immediately set the token in the store
+      // This makes the token available to interceptors for subsequent API calls.
+      set({isLoading: true, error: null, token: storedToken});
 
-      // Verify token by making a request to get user profile
       api
-        .get<{user: User}>('/auth/profile')
+        .get<{user: User}>('/users/profile')
         .then((response) => {
           const {user} = response.data;
+          console.log('User profile fetched:', user);
           set({
             user,
-            token,
+            // token is already set, ensuring it persists even if this request takes time
             isAuthenticated: true,
             isLoading: false,
             error: null,
           });
         })
-        .catch(() => {
-          // Token is invalid, clear it
-          localStorage.removeItem('auth_token');
+        .catch((err) => {
+          console.error('Authentication initialization failed:', err);
+          // The interceptor's 401 handler will call logout,
+          // which correctly clears localStorage and Zustand state.
+          // This specific catch block handles non-401 errors for the profile fetch.
+          useAuthStore.getState().logout(); // Call logout to fully reset on any profile fetch failure
           set({
             user: null,
-            token: null,
+            token: null, // Ensure token is nullified in state if profile fetch fails
             isAuthenticated: false,
             isLoading: false,
-            error: null,
+            error: 'Session expired or invalid. Please log in again.',
           });
         });
     } else {

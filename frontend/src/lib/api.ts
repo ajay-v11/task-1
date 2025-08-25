@@ -1,9 +1,10 @@
 import axios, {type AxiosInstance, type AxiosResponse, AxiosError} from 'axios';
 import type {ApiError} from './types';
+import {useAuthStore} from './authStore'; // 💡 Import the store directly
 
 // Create axios instance with base configuration
 const api: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_BACKEND_URL || 'http:localhost:8080/api',
+  baseURL: import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -13,7 +14,8 @@ const api: AxiosInstance = axios.create({
 // Request interceptor to automatically attach JWT token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('auth_token');
+    // 💡 Use the Zustand store to get the current token
+    const token = useAuthStore.getState().token;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -30,14 +32,18 @@ api.interceptors.response.use(
     return response;
   },
   (error: AxiosError) => {
-    // Handle 401 Unauthorized errors by clearing auth data
+    // Handle 401 Unauthorized errors by calling the store's logout method
     if (error.response?.status === 401) {
-      localStorage.removeItem('auth_token');
-      // Redirect to login page or trigger logout in auth store
-      window.location.href = '/login';
+      // 💡 This is the crucial fix: call the logout action from the store
+      useAuthStore.getState().logout();
+      // The logout method handles both localStorage and state cleanup.
+      // No need to manually removeItem here.
+
+      // We still need to return a rejected promise to stop the chain.
+      return Promise.reject(error);
     }
 
-    // Handle network errors
+    // Handle network errors (no response from the server)
     if (!error.response) {
       console.error('Network error:', error.message);
       return Promise.reject({

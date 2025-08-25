@@ -1,1 +1,4 @@
-export function useProfile() {}
+export function useProfile() {
+
+    const [profile,setProfile]=
+}

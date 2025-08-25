@@ -16,7 +16,7 @@ export const authenticate = async (
   try {
     const authHeader = req.headers.authorization;
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!authHeader || !authHeader.startsWith('Bearer')) {
       return res.status(401).json({
         success: false,
         message: MESSAGES.ERROR.UNAUTHORIZED,
