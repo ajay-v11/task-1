@@ -20,6 +20,18 @@ export default function Navbar() {
     navigate('/profile');
   };
 
+  const handleRegister = () => {
+    navigate('/register');
+  };
+
+  const handleCards = () => {
+    navigate('/cards');
+  };
+
+  const handleUsers = () => {
+    navigate('/users');
+  };
+
   // Helper function to get display name
   const getDisplayName = () => {
     if (!user) return 'Profile';
@@ -38,6 +50,9 @@ export default function Navbar() {
     const role = user.role || 'user';
     return `${fullName} (${role})`;
   };
+
+  // Check if user has admin or manager role
+  const isAdminOrManager = user?.role === 'admin' || user?.role === 'manager';
 
   return (
     <nav className='bg-white shadow-sm border-b border-gray-100'>
@@ -75,12 +90,28 @@ export default function Navbar() {
                 className='text-gray-700 hover:text-gray-900 px-3 py-2 text-sm font-medium transition-colors'>
                 Business
               </a>
-              {/* Conditional rendering based on store state */}
+              {/* Cards button for admin and manager users */}
+              {isAuthenticated && isAdminOrManager && (
+                <button
+                  onClick={handleCards}
+                  className='text-gray-700 hover:text-gray-900 px-3 py-2 text-sm font-medium transition-colors'>
+                  Cards
+                </button>
+              )}
+              {/* Users button only for admin users */}
               {isAuthenticated && user?.role === 'admin' && (
                 <button
-                  onClick={() => navigate('/register')}
+                  onClick={handleUsers}
                   className='text-gray-700 hover:text-gray-900 px-3 py-2 text-sm font-medium transition-colors'>
-                  Register
+                  Users
+                </button>
+              )}
+              {/* Register button only for admin users */}
+              {isAuthenticated && user?.role === 'admin' && (
+                <button
+                  onClick={handleRegister}
+                  className='text-gray-700 hover:text-gray-900 px-3 py-2 text-sm font-medium transition-colors'>
+                  Create Users
                 </button>
               )}
             </div>

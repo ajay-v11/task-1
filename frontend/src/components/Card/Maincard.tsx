@@ -11,6 +11,7 @@ import {
   Phone,
   Edit,
   Plus,
+  Eye,
 } from 'lucide-react';
 import {useCardData} from '../../hooks/use-card-data';
 import NoCardMessage from './Nocard';
@@ -67,13 +68,17 @@ export default function MainCard({
   onCreate,
 }: {
   onEdit: () => void;
-  onCreate: () => void;
+  onCreate?: () => void;
 }) {
-  const {myCard, loading, error, userRole} = useCardData() as {
+  const {myCard, loading, error, userRole, updateCard} = useCardData() as {
     myCard?: CardType;
     loading: boolean;
     error?: string;
     userRole?: 'admin' | 'manager' | 'user';
+    updateCard: (
+      cardId: string,
+      cardData: Partial<CardType>
+    ) => Promise<{success: boolean; card?: CardType; error?: string}>;
   };
 
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
@@ -121,6 +126,26 @@ END:VCARD`;
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(link.href);
+  };
+
+  // 3. Add preview function that saves to DB
+  const handlePreview = async () => {
+    if (myCard?._id) {
+      try {
+        const result = await updateCard(myCard._id, {
+          ...myCard,
+        });
+
+        if (result?.success) {
+          // Show success message or handle as needed
+          console.log('Card previewed and saved to DB');
+        } else {
+          console.error('Failed to save card:', result?.error);
+        }
+      } catch (now) {
+        console.error('Error saving card:', now);
+      }
+    }
   };
 
   // Helper component for rendering tab content
@@ -267,11 +292,13 @@ END:VCARD`;
                 <Edit className='h-5 w-5 text-gray-600' />
               </button>
             )}
-            <button
-              onClick={onCreate}
-              className='bg-white/70 backdrop-blur-sm p-2 rounded-full shadow-lg hover:bg-white transition-colors'>
-              <Plus className='h-5 w-5 text-gray-600' />
-            </button>
+            {(userRole === 'admin' || userRole === 'manager') && (
+              <button
+                onClick={onCreate}
+                className='bg-white/70 backdrop-blur-sm p-2 rounded-full shadow-lg hover:bg-white transition-colors'>
+                <Plus className='h-5 w-5 text-gray-600' />
+              </button>
+            )}
           </div>
         </div>
         <div className='px-4 sm:px-6 py-4 flex-1 flex flex-col'>
@@ -357,7 +384,7 @@ END:VCARD`;
             </div>
           )}
 
-          <div className='grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4 sm:mb-6'>
+          <div className='grid grid-cols-2 sm:grid-cols-5 gap-2 mb-4 sm:mb-6'>
             <button className='flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-1 border border-gray-300 hover:bg-gray-50 px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm transition-colors'>
               {' '}
               <Share className='h-3 w-3 sm:h-4 sm:w-4' /> <span>Share</span>{' '}
@@ -381,6 +408,15 @@ END:VCARD`;
               <Save className='h-3 w-3 sm:h-4 sm:w-4' />{' '}
               <span className='text-center'>Save</span>{' '}
             </button>
+            {(userRole === 'admin' || userRole === 'manager') && (
+              <button
+                onClick={handlePreview}
+                className='flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-1 border border-gray-300 hover:bg-gray-50 px-1 sm:px-2 py-2 rounded-lg text-xs transition-colors'>
+                {' '}
+                <Eye className='h-3 w-3 sm:h-4 sm:w-4' />{' '}
+                <span className='text-center'>Preview</span>{' '}
+              </button>
+            )}
           </div>
 
           {/* 4. TABS SECTION: Updated with click handlers and conditional styling */}

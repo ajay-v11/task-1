@@ -12,8 +12,7 @@ import Footer from '../components/Footer';
 export default function UserRegisterPage() {
   const navigate = useNavigate();
   // Destructure state and actions from the Zustand store
-  const {createAdmin, isLoading, error, isAuthenticated, clearError} =
-    useAuthStore();
+  const {createAdmin, isLoading, error, clearError} = useAuthStore();
 
   const [formData, setFormData] = useState<UserRegistrationFormData>({
     email: '',
@@ -26,13 +25,6 @@ export default function UserRegisterPage() {
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string>
   >({});
-
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/');
-    }
-  }, [isAuthenticated, navigate]);
 
   // Clear errors when component mounts or form data changes
   useEffect(() => {
@@ -52,12 +44,13 @@ export default function UserRegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // REMOVE setIsSubmitting(true);
     setValidationErrors({});
 
     try {
       const validatedData = userRegistrationSchema.parse(formData);
-      await createAdmin(validatedData); // This will no longer throw on API error
+      await createAdmin(validatedData);
+      // On successful creation, redirect to home page
+      navigate('/');
     } catch (error) {
       if (error instanceof ZodError) {
         const errors: Record<string, string> = {};
@@ -70,7 +63,6 @@ export default function UserRegisterPage() {
       }
       // No need to handle API errors here anymore, the store does it.
     }
-    // REMOVE the finally block
   };
 
   return (
@@ -80,15 +72,10 @@ export default function UserRegisterPage() {
         <div className='max-w-md w-full space-y-8'>
           <div>
             <h2 className='mt-6 text-center text-3xl font-extrabold text-gray-900'>
-              Create New User/Manager
+              Create New User
             </h2>
             <p className='mt-2 text-center text-sm text-gray-600'>
-              Or{' '}
-              <Link
-                to='/login'
-                className='font-medium text-indigo-600 hover:text-indigo-500'>
-                sign in to existing account
-              </Link>
+              Add a new user or manager to the system
             </p>
           </div>
 
@@ -232,8 +219,7 @@ export default function UserRegisterPage() {
                   onChange={handleInputChange}
                   disabled={isLoading}>
                   <option value='user'>User</option>
-                  <option value='admin'>Admin</option>
-                  <option value='moderator'>Moderator</option>
+                  <option value='manager'>Manager</option>
                 </select>
                 {validationErrors.role && (
                   <p className='mt-1 text-sm text-red-600'>
@@ -249,7 +235,7 @@ export default function UserRegisterPage() {
                 <div className='flex'>
                   <div className='ml-3'>
                     <h3 className='text-sm font-medium text-red-800'>
-                      Registration failed
+                      User creation failed
                     </h3>
                     <div className='mt-2 text-sm text-red-700'>
                       <p>{error}</p>
@@ -284,10 +270,10 @@ export default function UserRegisterPage() {
                         fill='currentColor'
                         d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'></path>
                     </svg>
-                    Creating account...
+                    Creating user...
                   </>
                 ) : (
-                  'Create Account'
+                  'Create User'
                 )}
               </button>
             </div>

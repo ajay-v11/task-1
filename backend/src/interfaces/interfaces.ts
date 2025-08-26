@@ -44,7 +44,7 @@ export interface ICard extends Document {
   gallery?: string[];
 
   // System fields
-  assignedTo: mongoose.Types.ObjectId;
+  assignedTo: string; // Changed from ObjectId to string (email)
   createdBy: mongoose.Types.ObjectId;
   lastUpdatedAt: Date;
   createdAt: Date;

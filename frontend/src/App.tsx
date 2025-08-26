@@ -3,6 +3,8 @@ import React from 'react';
 import {Routes, Route, Navigate} from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import UserRegisterPage from './pages/UserRegisterPage';
+import UsersPage from './pages/UsersPage';
+import CardsPage from './pages/CardsPage';
 import PageComponent from './pages/MainPage';
 import ProfilePage from './pages/ProfilePage';
 import {useAuthStore} from './lib/authStore';
@@ -19,6 +21,23 @@ const ProtectedRoute = ({children}: {children: React.ReactNode}) => {
   return children;
 };
 
+const AdminProtectedRoute = ({children}: {children: React.ReactNode}) => {
+  const {isAuthenticated, user} = useAuthStore();
+
+  if (!isAuthenticated) {
+    // If not authenticated, redirect to the login page
+    return <Navigate to='/login' replace />;
+  }
+
+  if (user?.role !== 'admin') {
+    // If not admin, redirect to home page
+    return <Navigate to='/' replace />;
+  }
+
+  // If authenticated and admin, render the children
+  return children;
+};
+
 function App() {
   return (
     <Routes>
@@ -31,7 +50,16 @@ function App() {
         }
       />
       <Route path='/login' element={<LoginPage />} />
-      <Route path='/register' element={<UserRegisterPage />} />
+      <Route path='/users' element={<UsersPage />} />
+      <Route path='/cards' element={<CardsPage />} />
+      <Route
+        path='/register'
+        element={
+          <AdminProtectedRoute>
+            <UserRegisterPage />
+          </AdminProtectedRoute>
+        }
+      />
       <Route
         path='/profile'
         element={

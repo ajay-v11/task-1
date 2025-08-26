@@ -1,20 +1,21 @@
 import { useState } from 'react';
 import MainCard from '../components/Card/Maincard';
 import MainCardForm from '../components/Card/Maincardform';
-import CardPreview from '../components/Card/CardPreview';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
 import Placeholder from '../components/Placeholdersection';
 import { useCardData } from '../hooks/use-card-data';
 
-type ViewMode = 'placeholder' | 'form' | 'preview';
+type ViewMode = 'placeholder' | 'form';
 
 export default function PageComponent() {
   const [viewMode, setViewMode] = useState<ViewMode>('placeholder');
   const [editMode, setEditMode] = useState<'create' | 'edit'>('edit');
-  const [currentFormData, setCurrentFormData] = useState<any>(null);
   
-  const { myCard, createCard, updateCard, refreshCards } = useCardData();
+  const { myCard, createCard, updateCard, refreshCards, userRole } = useCardData();
+
+  // Check if user can create cards (admin or manager only)
+  const canCreateCards = userRole === 'admin' || userRole === 'manager';
 
   const handleEditCard = () => {
     setViewMode('form');
@@ -22,11 +23,13 @@ export default function PageComponent() {
   };
 
   const handleCreateCard = () => {
-    setViewMode('form');
-    setEditMode('create');
+    if (canCreateCards) {
+      setViewMode('form');
+      setEditMode('create');
+    }
   };
 
-  const handleSaveCard = async (data: any) => {
+  const handleSaveCard = async (data: Record<string, unknown>) => {
     try {
       let result;
       
@@ -51,7 +54,6 @@ export default function PageComponent() {
         await refreshCards();
         // Go back to placeholder view
         setViewMode('placeholder');
-        setCurrentFormData(null);
       } else {
         console.error('Failed to save card:', result?.error);
         // You could show an error message here
@@ -64,16 +66,6 @@ export default function PageComponent() {
 
   const handleCancelEdit = () => {
     setViewMode('placeholder');
-    setCurrentFormData(null);
-  };
-
-  const handlePreview = (data: any) => {
-    setCurrentFormData(data);
-    setViewMode('preview');
-  };
-
-  const handleBackToForm = () => {
-    setViewMode('form');
   };
 
   const renderRightPanel = () => {
@@ -86,8 +78,8 @@ export default function PageComponent() {
               fullName: myCard.fullName || '',
               title: myCard.title || '',
               location: myCard.location || '',
-              companyName: myCard.companyName || myCard.company?.name || '',
-              description: myCard.description || myCard.company?.description || '',
+              companyName: myCard.companyName || '',
+              description: myCard.description || '',
               assignedTo: myCard.assignedTo?._id || '',
               contact: {
                 phone: myCard.contact?.phone || '',
@@ -104,18 +96,10 @@ export default function PageComponent() {
             } : undefined}
             onSave={handleSaveCard}
             onCancel={handleCancelEdit}
-            onPreview={handlePreview}
-          />
-        );
-      case 'preview':
-        return (
-          <CardPreview
-            data={currentFormData}
-            onEdit={handleBackToForm}
           />
         );
       default:
-        return <Placeholder onCreateCard={handleCreateCard} />;
+        return <Placeholder onCreateCard={canCreateCards ? handleCreateCard : undefined} />;
     }
   };
 
@@ -129,11 +113,11 @@ export default function PageComponent() {
           <div className='w-full lg:w-[65%]'>
             <MainCard 
               onEdit={handleEditCard}
-              onCreate={handleCreateCard}
+              onCreate={canCreateCards ? handleCreateCard : undefined}
             />
           </div>
 
-          {/* Right Panel - Form, Preview, or Placeholder */}
+          {/* Right Panel - Form or Placeholder */}
           <div className='w-full lg:w-[35%]'>
             {renderRightPanel()}
           </div>

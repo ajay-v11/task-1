@@ -139,7 +139,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     try {
       console.log('Attempting admin creation to:', api.defaults.baseURL);
 
-      const response = await api.post('/auth/create-admin', adminData);
+      const response = await api.post('/auth/create-user', adminData);
 
       console.log('Admin creation response:', response.data);
 

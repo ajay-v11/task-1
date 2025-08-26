@@ -177,14 +177,58 @@ export const testApiConnection = async (): Promise<boolean> => {
 // Card API functions
 export const cardApi = {
   // Create a new card
-  create: async (cardData: any) => {
-    const response = await api.post('/cards', cardData);
+  create: async (cardData: any, profilePicture?: File) => {
+    const formData = new FormData();
+    
+    // Add all card data
+    Object.keys(cardData).forEach(key => {
+      if (key === 'contact' || key === 'socialLinks') {
+        formData.append(key, JSON.stringify(cardData[key]));
+      } else if (Array.isArray(cardData[key])) {
+        formData.append(key, JSON.stringify(cardData[key]));
+      } else {
+        formData.append(key, cardData[key]);
+      }
+    });
+
+    // Add profile picture if provided
+    if (profilePicture) {
+      formData.append('profilePicture', profilePicture);
+    }
+
+    const response = await api.post('/cards', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   },
 
   // Update an existing card
-  update: async (cardId: string, cardData: any) => {
-    const response = await api.put(`/cards/${cardId}`, cardData);
+  update: async (cardId: string, cardData: any, profilePicture?: File) => {
+    const formData = new FormData();
+    
+    // Add all card data
+    Object.keys(cardData).forEach(key => {
+      if (key === 'contact' || key === 'socialLinks') {
+        formData.append(key, JSON.stringify(cardData[key]));
+      } else if (Array.isArray(cardData[key])) {
+        formData.append(key, JSON.stringify(cardData[key]));
+      } else {
+        formData.append(key, cardData[key]);
+      }
+    });
+
+    // Add profile picture if provided
+    if (profilePicture) {
+      formData.append('profilePicture', profilePicture);
+    }
+
+    const response = await api.put(`/cards/${cardId}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   },
 

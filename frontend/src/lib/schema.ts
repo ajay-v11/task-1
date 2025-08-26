@@ -27,8 +27,8 @@ export const userRegistrationSchema = z.object({
     .min(1, 'Last name is required')
     .max(50, 'Last name must be less than 50 characters')
     .trim(),
-  role: z.enum(['user', 'admin', 'moderator'], {
-    message: 'Role must be one of user, admin, or moderator',
+  role: z.enum(['user', 'admin', 'manager'], {
+    message: 'Role must be one of user, admin, or manager',
   }),
 });
 // Type inference from schemas for use in components

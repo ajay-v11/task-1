@@ -92,9 +92,10 @@ const cardSchema = new Schema<ICard>(
 
     // System fields
     assignedTo: {
-      type: Schema.Types.ObjectId,
-      ref: 'User',
-      required: [true, 'Assigned user is required'],
+      type: String,
+      required: [true, 'Assigned user email is required'],
+      trim: true,
+      lowercase: true,
     },
     createdBy: {
       type: Schema.Types.ObjectId,

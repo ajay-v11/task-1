@@ -1,5 +1,6 @@
 import {Response, NextFunction} from 'express';
 import {Card} from '../models/Card';
+import {User} from '../models/User';
 import {MESSAGES} from '../constants/messages';
 import {USER_ROLES} from '../constants/roles';
 import {AuthRequest} from '../middlewares/auth.middleware';
@@ -19,19 +20,16 @@ export const getAllCards = async (
       // Admin can see all cards
       cards = await Card.find()
         .populate('createdBy', 'firstName lastName email role')
-        .populate('assignedTo', 'firstName lastName email role')
         .sort({createdAt: -1});
     } else if (role === USER_ROLES.MANAGER) {
       // Manager can see all cards but only edit their own
       cards = await Card.find()
         .populate('createdBy', 'firstName lastName email role')
-        .populate('assignedTo', 'firstName lastName email role')
         .sort({createdAt: -1});
     } else {
       // User can only see cards assigned to them
-      cards = await Card.find({assignedTo: userId})
+      cards = await Card.find({assignedTo: req.user.email})
         .populate('createdBy', 'firstName lastName email role')
-        .populate('assignedTo', 'firstName lastName email role')
         .sort({createdAt: -1});
     }
 
@@ -91,7 +89,16 @@ export const createCard = async (
       return res.status(400).json({
         success: false,
         message:
-          'Full name, title, location, company name, description, contact email, and assigned user are required',
+          'Full name, title, location, company name, description, contact email, and assigned user email are required',
+      });
+    }
+
+    // Validate that the assigned user exists
+    const assignedUser = await User.findOne({ email: assignedTo });
+    if (!assignedUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'Assigned user with this email does not exist',
       });
     }
 
@@ -115,7 +122,6 @@ export const createCard = async (
 
     // Populate the created card
     await card.populate('createdBy', 'firstName lastName email role');
-    await card.populate('assignedTo', 'firstName lastName email role');
 
     res.status(201).json({
       success: true,
@@ -164,7 +170,7 @@ export const updateCard = async (
       canEdit = true; // Manager can edit only their own cards
     } else if (
       role === USER_ROLES.USER &&
-      card.assignedTo.toString() === userId
+      card.assignedTo === req.user.email
     ) {
       canEdit = true; // User can edit only cards assigned to them
     }
@@ -210,13 +216,23 @@ export const updateCard = async (
       updateData.profilePicture = req.file.buffer;
     }
 
+    // If assignedTo is being updated, validate the user exists
+    if (assignedTo && assignedTo !== card.assignedTo) {
+      const assignedUser = await User.findOne({ email: assignedTo });
+      if (!assignedUser) {
+        return res.status(400).json({
+          success: false,
+          message: 'Assigned user with this email does not exist',
+        });
+      }
+    }
+
     // Update the card
     const updatedCard = await Card.findByIdAndUpdate(id, updateData, {
       new: true,
       runValidators: true,
     })
-      .populate('createdBy', 'firstName lastName email role')
-      .populate('assignedTo', 'firstName lastName email role');
+      .populate('createdBy', 'firstName lastName email role');
 
     res.status(200).json({
       success: true,
@@ -290,8 +306,7 @@ export const getCardById = async (
     }
 
     const card = await Card.findById(id)
-      .populate('createdBy', 'firstName lastName email role')
-      .populate('assignedTo', 'firstName lastName email role');
+      .populate('createdBy', 'firstName lastName email role');
 
     if (!card) {
       return res.status(404).json({
@@ -306,7 +321,7 @@ export const getCardById = async (
       canView = true; // Admin and Manager can view all cards
     } else if (
       role === USER_ROLES.USER &&
-      card.assignedTo._id.toString() === userId
+      card.assignedTo === req.user.email
     ) {
       canView = true; // User can view only cards assigned to them
     }

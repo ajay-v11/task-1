@@ -1,5 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Save, X, User, Building, MapPin, Eye } from 'lucide-react';
+import { Save, X, User, Upload, Image } from 'lucide-react';
+import api from '../../lib/api';
+
+type User = {
+  _id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+};
 
 type CardFormData = {
   fullName: string;
@@ -24,13 +33,12 @@ type CardFormData = {
 
 type CardFormProps = {
   initialData?: Partial<CardFormData>;
-  onSave: (data: CardFormData) => void;
+  onSave: (data: CardFormData, profilePicture?: File) => void;
   onCancel: () => void;
-  onPreview: (data: CardFormData) => void;
   mode: 'create' | 'edit';
 };
 
-export default function MainCardForm({ initialData, onSave, onCancel, onPreview, mode }: CardFormProps) {
+export default function MainCardForm({ initialData, onSave, onCancel, mode }: CardFormProps) {
   const [formData, setFormData] = useState<CardFormData>({
     fullName: '',
     title: '',
@@ -52,6 +60,26 @@ export default function MainCardForm({ initialData, onSave, onCancel, onPreview,
     gallery: [''],
     ...initialData,
   });
+
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [profilePicture, setProfilePicture] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await api.get('/users/dropdown');
+        if (response.data.success) {
+          setUsers(response.data.data.users || []);
+        }
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -101,13 +129,32 @@ export default function MainCardForm({ initialData, onSave, onCancel, onPreview,
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave(formData);
+  const handleProfilePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file (PNG, JPG, or JPEG)');
+        return;
+      }
+
+      // Validate file size (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size must be less than 5MB');
+        return;
+      }
+
+      setProfilePicture(file);
+      
+      // Create preview URL
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+    }
   };
 
-  const handlePreview = () => {
-    onPreview(formData);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(formData, profilePicture || undefined);
   };
 
   return (
@@ -128,6 +175,56 @@ export default function MainCardForm({ initialData, onSave, onCancel, onPreview,
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Profile Picture Upload */}
+          <div className="space-y-3">
+            <h3 className="text-md font-semibold text-gray-800 flex items-center gap-2">
+              <Image className="h-4 w-4" />
+              Profile Picture
+            </h3>
+            
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <div className="w-24 h-24 rounded-full border-2 border-gray-300 overflow-hidden bg-gray-100 flex items-center justify-center">
+                  {previewUrl ? (
+                    <img
+                      src={previewUrl}
+                      alt="Profile preview"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Image className="w-8 h-8 text-gray-400" />
+                  )}
+                </div>
+                <label
+                  htmlFor="profilePicture"
+                  className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 hover:opacity-100 transition-opacity cursor-pointer rounded-full"
+                >
+                  <Upload className="w-6 h-6 text-white" />
+                </label>
+              </div>
+              
+              <div className="flex-1">
+                <input
+                  type="file"
+                  id="profilePicture"
+                  accept="image/png,image/jpg,image/jpeg"
+                  onChange={handleProfilePictureChange}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="profilePicture"
+                  className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload Image
+                </label>
+                <p className="text-xs text-gray-500 mt-1">
+                  PNG, JPG, or JPEG up to 5MB
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Basic Info */}
           <div className="space-y-3">
             <div>
@@ -204,14 +301,19 @@ export default function MainCardForm({ initialData, onSave, onCancel, onPreview,
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Assigned To *
               </label>
-              <input
-                type="text"
+              <select
                 value={formData.assignedTo}
                 onChange={(e) => handleInputChange('assignedTo', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter user ID or name"
                 required
-              />
+              >
+                <option value="">Select a user</option>
+                {users.map((user) => (
+                  <option key={user._id} value={user.email}>
+                    {user.firstName} {user.lastName} ({user.email}) - {user.role}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -408,14 +510,7 @@ export default function MainCardForm({ initialData, onSave, onCancel, onPreview,
               <Save className="h-4 w-4" />
               {mode === 'create' ? 'Create Card' : 'Save Changes'}
             </button>
-            <button
-              type="button"
-              onClick={handlePreview}
-              className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
-            >
-              <Eye className="h-4 w-4" />
-              Preview
-            </button>
+
             <button
               type="button"
               onClick={onCancel}
