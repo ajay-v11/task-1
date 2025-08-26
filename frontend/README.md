@@ -1,69 +1,51 @@
-# React + TypeScript + Vite
+# Frontend - Digital Business Card App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Features
 
-Currently, two official plugins are available:
+### Card Management
+- **View Mode**: Display business cards with contact information, services, products, and gallery
+- **Edit Mode**: Click the pencil icon on any card to edit it
+- **Create Mode**: Click the plus icon or use the "Create New Card" button to create a new card
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### Form Features
+- **Live Preview**: See changes in real-time as you type
+- **Comprehensive Fields**: 
+  - Basic info (name, title, location, company, description)
+  - Contact details (phone, email)
+  - Social links (Instagram, Facebook, Twitter)
+  - Services (dynamic list)
+  - Products (dynamic list)
+  - Gallery (image URLs)
+- **Responsive Design**: Works on all screen sizes
+- **Validation**: Required field validation for essential information
 
-## Expanding the ESLint configuration
+### UI Components
+- **MainCard**: Displays the business card with edit/create buttons
+- **MainCardForm**: Reusable form component for editing/creating cards
+- **Placeholder**: Right panel with business features and create button
+- **Live Preview**: Real-time preview of card changes
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Usage
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+1. **Edit Existing Card**: Click the pencil icon on any card
+2. **Create New Card**: Click the plus icon or "Create New Card" button
+3. **Form Navigation**: Fill out the form fields - changes appear in live preview
+4. **Save/Cancel**: Use Save button to submit or Cancel to return to view mode
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+## Technical Details
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- Built with React + TypeScript
+- Uses Tailwind CSS for styling
+- Responsive design with mobile-first approach
+- Form state management with React hooks
+- Live preview updates without server calls
+- Stubbed API integration (ready for backend connection)
+
+## Development
+
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+The app will run on `http://localhost:5173`

@@ -1,6 +1,6 @@
-import {MapPin, Building, Users, Briefcase, ArrowRight} from 'lucide-react';
+import {MapPin, Building, Users, Briefcase, ArrowRight, Plus} from 'lucide-react';
 
-export default function Placeholder() {
+export default function Placeholder({ onCreateCard }: { onCreateCard?: () => void }) {
   const placeholderCards = [
     {
       icon: <MapPin className='h-8 w-8 text-blue-600' />,
@@ -30,6 +30,19 @@ export default function Placeholder() {
 
   return (
     <div className='w-full h-full flex flex-col space-y-4 sm:space-y-6'>
+      {/* Create New Card Button */}
+      {onCreateCard && (
+        <div className='bg-white rounded-xl shadow-md p-4'>
+          <button
+            onClick={onCreateCard}
+            className='w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2'
+          >
+            <Plus className='h-5 w-5' />
+            Create New Card
+          </button>
+        </div>
+      )}
+
       {/* Cards grid */}
       <div className='grid grid-cols-2 gap-3 sm:gap-4 flex-1'>
         {placeholderCards.map((card, index) => (

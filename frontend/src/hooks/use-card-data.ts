@@ -1,5 +1,5 @@
 import {useState, useEffect, useMemo} from 'react';
-import api from '../lib/api';
+import api, { cardApi } from '../lib/api';
 import type {Card} from '../lib/types';
 import {useAuthStore} from '../lib/authStore';
 
@@ -52,6 +52,56 @@ export const useCardData = () => {
         'Failed to load cards. Please try again.';
       setError(errorMessage);
       setCards([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Create a new card
+  const createCard = async (cardData: any) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await cardApi.create(cardData);
+      
+      if (response.success && response.data?.card) {
+        // Add the new card to the list
+        setCards(prev => [response.data.card, ...prev]);
+        return { success: true, card: response.data.card };
+      } else {
+        throw new Error(response.message || 'Failed to create card');
+      }
+    } catch (err: any) {
+      const errorMessage = err?.response?.data?.message || err?.message || 'Failed to create card';
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Update an existing card
+  const updateCard = async (cardId: string, cardData: any) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await cardApi.update(cardId, cardData);
+      
+      if (response.success && response.data?.card) {
+        // Update the card in the list
+        setCards(prev => prev.map(card => 
+          card._id === cardId ? response.data.card : card
+        ));
+        return { success: true, card: response.data.card };
+      } else {
+        throw new Error(response.message || 'Failed to update card');
+      }
+    } catch (err: any) {
+      const errorMessage = err?.response?.data?.message || err?.message || 'Failed to update card';
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
     }
@@ -111,6 +161,8 @@ export const useCardData = () => {
 
     // Functions
     refreshCards,
+    createCard,
+    updateCard,
 
     // Helper properties
     hasCards: cards.length > 0,

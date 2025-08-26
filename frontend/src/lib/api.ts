@@ -174,4 +174,37 @@ export const testApiConnection = async (): Promise<boolean> => {
   }
 };
 
+// Card API functions
+export const cardApi = {
+  // Create a new card
+  create: async (cardData: any) => {
+    const response = await api.post('/cards', cardData);
+    return response.data;
+  },
+
+  // Update an existing card
+  update: async (cardId: string, cardData: any) => {
+    const response = await api.put(`/cards/${cardId}`, cardData);
+    return response.data;
+  },
+
+  // Delete a card
+  delete: async (cardId: string) => {
+    const response = await api.delete(`/cards/${cardId}`);
+    return response.data;
+  },
+
+  // Get a single card by ID
+  getById: async (cardId: string) => {
+    const response = await api.get(`/cards/${cardId}`);
+    return response.data;
+  },
+
+  // Get all cards
+  getAll: async () => {
+    const response = await api.get('/cards');
+    return response.data;
+  },
+};
+
 export default api;
