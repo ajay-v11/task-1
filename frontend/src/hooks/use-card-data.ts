@@ -57,13 +57,13 @@ export const useCardData = () => {
     }
   };
 
-  // Create a new card
-  const createCard = async (cardData: any) => {
+  // Create a new card (supports optional profile picture)
+  const createCard = async (cardData: any, profilePicture?: File) => {
     try {
       setLoading(true);
       setError(null);
 
-      const response = await cardApi.create(cardData);
+      const response = await cardApi.create(cardData, profilePicture);
 
       if (response.success && response.data?.card) {
         // Add the new card to the list
@@ -82,13 +82,17 @@ export const useCardData = () => {
     }
   };
 
-  // Update an existing card
-  const updateCard = async (cardId: string, cardData: any) => {
+  // Update an existing card (supports optional profile picture)
+  const updateCard = async (
+    cardId: string,
+    cardData: any,
+    profilePicture?: File
+  ) => {
     try {
       setLoading(true);
       setError(null);
 
-      const response = await cardApi.update(cardId, cardData);
+      const response = await cardApi.update(cardId, cardData, profilePicture);
 
       if (response.success && response.data?.card) {
         // Update the card in the list

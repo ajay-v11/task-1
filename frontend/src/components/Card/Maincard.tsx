@@ -11,7 +11,6 @@ import {
   Phone,
   Edit,
   Plus,
-  Eye,
 } from 'lucide-react';
 import {useCardData} from '../../hooks/use-card-data';
 import {useAuthStore} from '../../lib/authStore';
@@ -129,26 +128,6 @@ END:VCARD`;
     URL.revokeObjectURL(link.href);
   };
 
-  // 3. Add preview function that saves to DB
-  const handlePreview = async () => {
-    if (myCard?._id) {
-      try {
-        const result = await updateCard(myCard._id, {
-          ...myCard,
-        });
-
-        if (result?.success) {
-          // Show success message or handle as needed
-          console.log('Card previewed and saved to DB');
-        } else {
-          console.error('Failed to save card:', result?.error);
-        }
-      } catch (now) {
-        console.error('Error saving card:', now);
-      }
-    }
-  };
-
   // Helper component for rendering tab content
   const TabContent = () => {
     switch (activeTab) {
@@ -256,19 +235,44 @@ END:VCARD`;
     userRole === 'manager' ||
     (userRole === 'user' && myCard.assignedTo === user?.email);
 
+  // Helper: convert Uint8Array to base64 in safe chunks to avoid call stack overflow
+  const uint8ToBase64 = (bytes: Uint8Array): string => {
+    let binary = '';
+    const CHUNK_SIZE = 0x8000; // 32k
+    for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+      const sub = bytes.subarray(i, i + CHUNK_SIZE);
+      binary += String.fromCharCode.apply(null, Array.from(sub) as number[]);
+    }
+    return btoa(binary);
+  };
+
   let profileImageSrc = 'https://via.placeholder.com/150';
   if (myCard.profilePicture) {
     if (typeof myCard.profilePicture === 'string') {
+      // Already a URL or data URL
       profileImageSrc = myCard.profilePicture;
-    } else if (myCard.profilePicture.data) {
-      profileImageSrc = `data:${
-        myCard.profilePicture.contentType
-      };base64,${btoa(
-        new Uint8Array(myCard.profilePicture.data.data).reduce(
-          (data, byte) => data + String.fromCharCode(byte),
-          ''
-        )
-      )}`;
+    } else if (
+      // Support shapes like { type: 'Buffer', data: number[] } (Mongoose Buffer serialization)
+      (myCard.profilePicture as any)?.type === 'Buffer' &&
+      Array.isArray((myCard.profilePicture as any).data)
+    ) {
+      const bytes = new Uint8Array(
+        (myCard.profilePicture as any).data as number[]
+      );
+      const base64 = uint8ToBase64(bytes);
+      const mime = 'image/jpeg';
+      profileImageSrc = `data:${mime};base64,${base64}`;
+    } else if (
+      // Fallback for shape { data: { data: number[] }, contentType?: string }
+      (myCard.profilePicture as any)?.data?.data &&
+      Array.isArray((myCard.profilePicture as any).data.data)
+    ) {
+      const bytes = new Uint8Array(
+        (myCard.profilePicture as any).data.data as number[]
+      );
+      const base64 = uint8ToBase64(bytes);
+      const mime = (myCard.profilePicture as any).contentType || 'image/jpeg';
+      profileImageSrc = `data:${mime};base64,${base64}`;
     }
   }
 
@@ -409,15 +413,6 @@ END:VCARD`;
               <Save className='h-3 w-3 sm:h-4 sm:w-4' />{' '}
               <span className='text-center'>Save</span>{' '}
             </button>
-            {(userRole === 'admin' || userRole === 'manager') && (
-              <button
-                onClick={handlePreview}
-                className='flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-1 border border-gray-300 hover:bg-gray-50 px-1 sm:px-2 py-2 rounded-lg text-xs transition-colors'>
-                {' '}
-                <Eye className='h-3 w-3 sm:h-4 sm:w-4' />{' '}
-                <span className='text-center'>Preview</span>{' '}
-              </button>
-            )}
           </div>
 
           {/* 4. TABS SECTION: Updated with click handlers and conditional styling */}

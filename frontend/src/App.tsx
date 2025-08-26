@@ -1,12 +1,11 @@
-// src/App.tsx
 import React from 'react';
+import {Toaster} from 'react-hot-toast';
 import {Routes, Route, Navigate} from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import UserRegisterPage from './pages/UserRegisterPage';
 import UsersPage from './pages/UsersPage';
 import CardsPage from './pages/CardsPage';
 import PageComponent from './pages/MainPage';
-import ProfilePage from './pages/ProfilePage';
 import {useAuthStore} from './lib/authStore';
 
 const ProtectedRoute = ({children}: {children: React.ReactNode}) => {
@@ -40,35 +39,30 @@ const AdminProtectedRoute = ({children}: {children: React.ReactNode}) => {
 
 function App() {
   return (
-    <Routes>
-      <Route
-        path='/'
-        element={
-          <ProtectedRoute>
-            <PageComponent />
-          </ProtectedRoute>
-        }
-      />
-      <Route path='/login' element={<LoginPage />} />
-      <Route path='/users' element={<UsersPage />} />
-      <Route path='/cards' element={<CardsPage />} />
-      <Route
-        path='/register'
-        element={
-          <AdminProtectedRoute>
-            <UserRegisterPage />
-          </AdminProtectedRoute>
-        }
-      />
-      <Route
-        path='/profile'
-        element={
-          <ProtectedRoute>
-            <ProfilePage />
-          </ProtectedRoute>
-        }
-      />
-    </Routes>
+    <>
+      <Toaster position='top-right' />
+      <Routes>
+        <Route
+          path='/'
+          element={
+            <ProtectedRoute>
+              <PageComponent />
+            </ProtectedRoute>
+          }
+        />
+        <Route path='/login' element={<LoginPage />} />
+        <Route path='/users' element={<UsersPage />} />
+        <Route path='/cards' element={<CardsPage />} />
+        <Route
+          path='/register'
+          element={
+            <AdminProtectedRoute>
+              <UserRegisterPage />
+            </AdminProtectedRoute>
+          }
+        />
+      </Routes>
+    </>
   );
 }
 

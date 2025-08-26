@@ -1,4 +1,5 @@
 import {useState} from 'react';
+import {toast} from 'react-hot-toast';
 import {Save, X, User, Upload, Image} from 'lucide-react';
 
 type CardFormData = {
@@ -122,13 +123,13 @@ export default function MainCardForm({
     if (file) {
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        alert('Please select an image file (PNG, JPG, or JPEG)');
+        toast.error('Please select an image file (PNG, JPG, or JPEG)');
         return;
       }
 
       // Validate file size (5MB)
       if (file.size > 5 * 1024 * 1024) {
-        alert('File size must be less than 5MB');
+        toast.error('File size must be less than 5MB');
         return;
       }
 

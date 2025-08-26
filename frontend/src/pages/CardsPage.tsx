@@ -1,4 +1,5 @@
 import {useState, useEffect} from 'react';
+import {toast} from 'react-hot-toast';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -114,11 +115,14 @@ export default function CardsPage() {
       // Handle axios error responses
       if (err && typeof err === 'object' && 'response' in err) {
         const axiosError = err as {response?: {data?: {message?: string}}};
-        setError(axiosError.response?.data?.message || 'Failed to fetch cards');
+        const msg = axiosError.response?.data?.message || 'Failed to fetch cards';
+        setError(msg);
+        toast.error(msg);
       } else {
         const errorMessage =
           err instanceof Error ? err.message : 'Failed to fetch cards';
         setError(errorMessage);
+        toast.error(errorMessage);
       }
     } finally {
       setLoading(false);
@@ -154,11 +158,11 @@ export default function CardsPage() {
         const response = await api.post('/cards', formData);
 
         if (response.data.success) {
-          alert('Card created successfully!');
+          toast.success('Card created successfully');
           handleCloseForm();
           fetchCards(); // Refresh the cards list
         } else {
-          alert(response.data.message || 'Failed to create card');
+          toast.error(response.data.message || 'Failed to create card');
         }
       } else {
         // Edit mode
@@ -169,11 +173,11 @@ export default function CardsPage() {
         const response = await api.put(`/cards/${editingCard._id}`, formData);
 
         if (response.data.success) {
-          alert('Card updated successfully!');
+          toast.success('Card updated successfully');
           handleCloseForm();
           fetchCards(); // Refresh the cards list
         } else {
-          alert(response.data.message || 'Failed to update card');
+          toast.error(response.data.message || 'Failed to update card');
         }
       }
     } catch (error: unknown) {
@@ -181,7 +185,7 @@ export default function CardsPage() {
       const message =
         (error as any)?.response?.data?.message ||
         (error instanceof Error ? error.message : 'Failed to save card');
-      alert(message);
+      toast.error(message);
     }
   };
 
@@ -196,14 +200,42 @@ export default function CardsPage() {
   };
 
   const getProfileImageUrl = (card: Card) => {
-    if (card.profilePicture) {
-      // If profilePicture is already a string (URL), return it
-      if (typeof card.profilePicture === 'string') {
-        return card.profilePicture;
+    const pic: any = (card as any).profilePicture;
+    if (!pic) return null;
+
+    // If already a URL or data URL string
+    if (typeof pic === 'string') return pic;
+
+    // Handle Buffer-like shapes: { type: 'Buffer', data: number[] }
+    if (pic?.type === 'Buffer' && Array.isArray(pic.data)) {
+      const bytes = new Uint8Array(pic.data as number[]);
+      // Convert bytes to base64 in chunks to avoid call stack overflows
+      let binary = '';
+      const CHUNK_SIZE = 0x8000; // 32k chunks
+      for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+        const sub = bytes.subarray(i, i + CHUNK_SIZE);
+        // apply with small chunks prevents Maximum call stack size exceeded
+        binary += String.fromCharCode.apply(null, Array.from(sub) as number[]);
       }
-      // If it's a base64 string, return it directly
-      return card.profilePicture;
+      const base64 = btoa(binary);
+      const mime = 'image/jpeg';
+      return `data:${mime};base64,${base64}`;
     }
+
+    // Handle shape: { data: { data: number[] }, contentType?: string }
+    if (pic?.data?.data && Array.isArray(pic.data.data)) {
+      const bytes = new Uint8Array(pic.data.data as number[]);
+      let binary = '';
+      const CHUNK_SIZE = 0x8000; // 32k chunks
+      for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+        const sub = bytes.subarray(i, i + CHUNK_SIZE);
+        binary += String.fromCharCode.apply(null, Array.from(sub) as number[]);
+      }
+      const base64 = btoa(binary);
+      const mime = pic.contentType || 'image/jpeg';
+      return `data:${mime};base64,${base64}`;
+    }
+
     return null;
   };
 

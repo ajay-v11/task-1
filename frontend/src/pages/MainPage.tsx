@@ -1,4 +1,5 @@
 import {useState} from 'react';
+import {toast} from 'react-hot-toast';
 import MainCard from '../components/Card/Maincard';
 import MainCardForm from '../components/Card/Maincardform';
 import Footer from '../components/Footer';
@@ -30,38 +31,56 @@ export default function PageComponent() {
     }
   };
 
-  const handleSaveCard = async (data: Record<string, unknown>) => {
+  const handleSaveCard = async (
+    data: Record<string, unknown>,
+    profilePicture?: File
+  ) => {
     try {
       let result;
 
       if (editMode === 'create') {
         // Create new card
-        result = await createCard({
-          ...data,
-          lastUpdatedAt: new Date().toISOString(),
-        });
+        result = await createCard(
+          {
+            ...data,
+            lastUpdatedAt: new Date().toISOString(),
+          },
+          profilePicture
+        );
       } else {
         // Update existing card
         if (myCard?._id) {
-          result = await updateCard(myCard._id, {
-            ...data,
-            lastUpdatedAt: new Date().toISOString(),
-          });
+          result = await updateCard(
+            myCard._id,
+            {
+              ...data,
+              lastUpdatedAt: new Date().toISOString(),
+            },
+            profilePicture
+          );
         }
       }
 
       if (result?.success) {
+        toast.success(
+          editMode === 'create' ? 'Card created successfully' : 'Card updated successfully'
+        );
         // Refresh cards to update the left panel
         await refreshCards();
         // Go back to placeholder view
         setViewMode('placeholder');
       } else {
-        console.error('Failed to save card:', result?.error);
-        // You could show an error message here
+        const msg = result?.error || 'Failed to save card';
+        console.error('Failed to save card:', msg);
+        toast.error(msg);
       }
     } catch (error) {
+      const msg =
+        (error as any)?.response?.data?.message ||
+        (error as Error)?.message ||
+        'Failed to save card';
       console.error('Error saving card:', error);
-      // You could show an error message here
+      toast.error(msg);
     }
   };
 
