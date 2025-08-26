@@ -15,16 +15,23 @@ const getBaseURL = () => {
 const api: AxiosInstance = axios.create({
   baseURL: getBaseURL(),
   timeout: 15000, // Increased timeout
-  withCredentials: true, // This is crucial for cookies
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
   },
 });
 
-// Request interceptor for debugging
+// Request interceptor to automatically add JWT token
 api.interceptors.request.use(
   (config) => {
+    // Get token from localStorage
+    const token = localStorage.getItem('auth_token');
+
+    // Add Authorization header if token exists
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
     console.log(
       `Making ${config.method?.toUpperCase()} request to: ${config.baseURL}${
         config.url
@@ -34,7 +41,6 @@ api.interceptors.request.use(
       url: config.url,
       method: config.method,
       baseURL: config.baseURL,
-      withCredentials: config.withCredentials,
       headers: config.headers,
       data: config.data
         ? {
@@ -123,6 +129,9 @@ api.interceptors.response.use(
 
     // Handle 401 Unauthorized errors
     if (error.response?.status === 401) {
+      // Clear invalid token from localStorage
+      localStorage.removeItem('auth_token');
+
       // Don't auto-redirect here, let the auth store handle it
       const apiError: ApiErrorResponse = {
         success: false,
@@ -156,7 +165,6 @@ export const testApiConnection = async (): Promise<boolean> => {
     console.log('Testing API connection...');
     const response = await axios.get(`${getBaseURL()}/health`, {
       timeout: 5000,
-      withCredentials: true,
     });
     console.log('API connection test successful:', response.data);
     return true;

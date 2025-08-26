@@ -8,6 +8,7 @@ interface AuthState {
   isLoading: boolean;
   error: string | null;
   isInitialized: boolean;
+  token: string | null;
 }
 
 interface AuthActions {
@@ -17,9 +18,15 @@ interface AuthActions {
   checkAuth: () => Promise<void>;
   clearError: () => void;
   setLoading: (loading: boolean) => void;
+  getToken: () => string | null;
+  setToken: (token: string) => void;
+  clearToken: () => void;
 }
 
 type AuthStore = AuthState & AuthActions;
+
+// Token storage keys
+const TOKEN_KEY = 'auth_token';
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
   // Initial state
@@ -28,6 +35,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   isLoading: true,
   error: null,
   isInitialized: false,
+  token: localStorage.getItem(TOKEN_KEY),
 
   // Actions
   login: async (credentials: LoginCredentials) => {
@@ -46,14 +54,17 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
       // Handle API response structure based on your backend
       let user;
+      let token;
       if (
         response.data.success &&
         response.data.data &&
         response.data.data.user
       ) {
         user = response.data.data.user;
+        token = response.data.data.token;
       } else if (response.data.user) {
         user = response.data.user;
+        token = response.data.token;
       } else {
         console.error('Unexpected response format:', response.data);
         throw new Error('Invalid response format: missing user data');
@@ -63,10 +74,18 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         throw new Error('Invalid user data received from server');
       }
 
+      if (!token) {
+        throw new Error('No authentication token received from server');
+      }
+
+      // Store token in localStorage
+      localStorage.setItem(TOKEN_KEY, token);
+
       console.log('Login successful, user:', user);
 
       set({
         user,
+        token,
         isAuthenticated: true,
         isLoading: false,
         error: null,
@@ -103,6 +122,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
       set({
         user: null,
+        token: null,
         isAuthenticated: false,
         isLoading: false,
         error: errorMessage,
@@ -125,14 +145,17 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
       // Handle API response structure
       let user;
+      let token;
       if (
         response.data.success &&
         response.data.data &&
         response.data.data.user
       ) {
         user = response.data.data.user;
+        token = response.data.data.token;
       } else if (response.data.user) {
         user = response.data.user;
+        token = response.data.token;
       } else {
         throw new Error('Invalid response format: missing user data');
       }
@@ -141,8 +164,16 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         throw new Error('Invalid user data received from server');
       }
 
+      if (!token) {
+        throw new Error('No authentication token received from server');
+      }
+
+      // Store token in localStorage
+      localStorage.setItem(TOKEN_KEY, token);
+
       set({
         user,
+        token,
         isAuthenticated: true,
         isLoading: false,
         error: null,
@@ -170,6 +201,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
       set({
         user: null,
+        token: null,
         isAuthenticated: false,
         isLoading: false,
         error: errorMessage,
@@ -189,8 +221,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       console.error('Logout error:', error);
       // Don't show error to user for logout failures
     } finally {
+      // Clear token from localStorage
+      localStorage.removeItem(TOKEN_KEY);
+
       set({
         user: null,
+        token: null,
         isAuthenticated: false,
         isLoading: false,
         error: null,
@@ -235,8 +271,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     } catch (error: any) {
       console.error('Auth check failed:', error);
 
+      // If auth check fails, clear token and user data
+      localStorage.removeItem(TOKEN_KEY);
+
       set({
         user: null,
+        token: null,
         isAuthenticated: false,
         isLoading: false,
         error: null, // Don't show auth check errors to user
@@ -251,5 +291,19 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   setLoading: (loading: boolean) => {
     set({isLoading: loading});
+  },
+
+  getToken: () => {
+    return get().token || localStorage.getItem(TOKEN_KEY);
+  },
+
+  setToken: (token: string) => {
+    localStorage.setItem(TOKEN_KEY, token);
+    set({token});
+  },
+
+  clearToken: () => {
+    localStorage.removeItem(TOKEN_KEY);
+    set({token: null});
   },
 }));

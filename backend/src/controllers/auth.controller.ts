@@ -10,8 +10,7 @@ const generateToken = (userId: string): string => {
     throw new Error('JWT_SECRET is not defined');
   }
   const options: SignOptions = {
-    expiresIn: (process.env.JWT_EXPIRES_IN ||
-      '7d') as jwt.SignOptions['expiresIn'],
+    expiresIn: '1d', // 1 day expiry
   };
   return jwt.sign({userId}, process.env.JWT_SECRET as jwt.Secret, options);
 };
@@ -41,19 +40,13 @@ export const login = async (
 
     const token = generateToken(user._id);
 
-    // Set JWT token as HTTP-only cookie
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
-
+    // Return JWT token directly in response body
     res.status(200).json({
       success: true,
       message: MESSAGES.SUCCESS.LOGIN,
       data: {
         user: user.toJSON(),
+        token: token, // Include token in response
       },
     });
   } catch (error) {
@@ -67,9 +60,7 @@ export const logout = async (
   next: NextFunction
 ) => {
   try {
-    // Clear the token cookie
-    res.clearCookie('token');
-
+    // No need to clear cookies anymore, just return success
     res.status(200).json({
       success: true,
       message: 'Logged out successfully',
@@ -215,16 +206,14 @@ export const createAdmin = async (
 
     const token = generateToken(adminUser._id);
 
-    // Set JWT token as HTTP-only cookie for the newly created admin
-    res.cookie('token', token, {
-      httpOnly: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
-
+    // Return JWT token directly in response body for the newly created admin
     res.status(201).json({
       success: true,
       message: 'Admin user created successfully',
-      data: {user: adminUser.toJSON()},
+      data: {
+        user: adminUser.toJSON(),
+        token: token, // Include token in response
+      },
     });
   } catch (error) {
     next(error);

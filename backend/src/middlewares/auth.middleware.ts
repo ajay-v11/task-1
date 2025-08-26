@@ -14,20 +14,16 @@ export const authenticate = async (
   next: NextFunction
 ) => {
   try {
-    // Try to get token from cookies first, fallback to Authorization header
-    let token = req.cookies?.token;
-    console.log('token is ', token);
-
-    if (!token) {
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer')) {
-        return res.status(401).json({
-          success: false,
-          message: MESSAGES.ERROR.UNAUTHORIZED,
-        });
-      }
-      token = authHeader.substring(7);
+    // Get token from Authorization header only
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        message: MESSAGES.ERROR.UNAUTHORIZED,
+      });
     }
+
+    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
 
