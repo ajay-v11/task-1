@@ -1,5 +1,5 @@
 import {useState, useEffect, useMemo} from 'react';
-import api, { cardApi } from '../lib/api';
+import api, {cardApi} from '../lib/api';
 import type {Card} from '../lib/types';
 import {useAuthStore} from '../lib/authStore';
 
@@ -62,20 +62,21 @@ export const useCardData = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await cardApi.create(cardData);
-      
+
       if (response.success && response.data?.card) {
         // Add the new card to the list
-        setCards(prev => [response.data.card, ...prev]);
-        return { success: true, card: response.data.card };
+        setCards((prev) => [response.data.card, ...prev]);
+        return {success: true, card: response.data.card};
       } else {
         throw new Error(response.message || 'Failed to create card');
       }
     } catch (err: any) {
-      const errorMessage = err?.response?.data?.message || err?.message || 'Failed to create card';
+      const errorMessage =
+        err?.response?.data?.message || err?.message || 'Failed to create card';
       setError(errorMessage);
-      return { success: false, error: errorMessage };
+      return {success: false, error: errorMessage};
     } finally {
       setLoading(false);
     }
@@ -86,22 +87,23 @@ export const useCardData = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await cardApi.update(cardId, cardData);
-      
+
       if (response.success && response.data?.card) {
         // Update the card in the list
-        setCards(prev => prev.map(card => 
-          card._id === cardId ? response.data.card : card
-        ));
-        return { success: true, card: response.data.card };
+        setCards((prev) =>
+          prev.map((card) => (card._id === cardId ? response.data.card : card))
+        );
+        return {success: true, card: response.data.card};
       } else {
         throw new Error(response.message || 'Failed to update card');
       }
     } catch (err: any) {
-      const errorMessage = err?.response?.data?.message || err?.message || 'Failed to update card';
+      const errorMessage =
+        err?.response?.data?.message || err?.message || 'Failed to update card';
       setError(errorMessage);
-      return { success: false, error: errorMessage };
+      return {success: false, error: errorMessage};
     } finally {
       setLoading(false);
     }
@@ -132,7 +134,7 @@ export const useCardData = () => {
       return null;
     }
 
-    return cards.find((card) => card.assignedTo?._id === user._id) || null;
+    return cards.find((card) => card.assignedTo === user.email) || null;
   }, [cards, user]);
 
   // Calculate statistics

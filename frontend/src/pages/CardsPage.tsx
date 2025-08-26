@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import {useState, useEffect} from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -7,20 +7,81 @@ import api from '../lib/api';
 
 interface Card {
   _id: string;
-  profilePicture?: Buffer;
+  profilePicture?: string;
   fullName: string;
   title: string;
   description: string;
   contact: {
     email: string;
-    phone?: string;
+    phone: string;
   };
   companyName?: string;
   location?: string;
-  assignedTo: string;
+  assignedTo:
+    | string
+    | {
+        _id: string;
+        email: string;
+        firstName?: string;
+        lastName?: string;
+        role?: string;
+      };
+  socialLinks?: {
+    instagram: string;
+    facebook: string;
+    twitter: string;
+  };
+  services?: string[];
+  products?: string[];
+  gallery?: string[];
   createdAt: string;
   lastUpdatedAt: string;
 }
+
+// Local mirror of the form's expected input type to avoid using 'any'
+type CardFormInput = {
+  fullName: string;
+  title: string;
+  location: string;
+  companyName: string;
+  description: string;
+  assignedTo: string; // email string expected by the form
+  contact: {
+    phone: string;
+    email: string;
+  };
+  socialLinks: {
+    instagram: string;
+    facebook: string;
+    twitter: string;
+  };
+  services: string[];
+  products: string[];
+  gallery: string[];
+};
+
+// Helper to construct multipart FormData from form input
+const buildFormData = (
+  input: CardFormInput,
+  profilePicture?: File
+): FormData => {
+  const formData = new FormData();
+  formData.append('fullName', input.fullName);
+  formData.append('title', input.title);
+  formData.append('location', input.location);
+  formData.append('companyName', input.companyName);
+  formData.append('description', input.description);
+  formData.append('assignedTo', input.assignedTo);
+  formData.append('contact', JSON.stringify(input.contact));
+  formData.append('socialLinks', JSON.stringify(input.socialLinks));
+  formData.append('services', JSON.stringify(input.services));
+  formData.append('products', JSON.stringify(input.products));
+  formData.append('gallery', JSON.stringify(input.gallery));
+  if (profilePicture) {
+    formData.append('profilePicture', profilePicture);
+  }
+  return formData;
+};
 
 export default function CardsPage() {
   const [cards, setCards] = useState<Card[]>([]);
@@ -29,7 +90,6 @@ export default function CardsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingCard, setEditingCard] = useState<Card | null>(null);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
-  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     fetchCards();
@@ -44,8 +104,7 @@ export default function CardsPage() {
 
       if (response.data.success) {
         // The API returns data.data.cards structure
-        const cardsData =
-          response.data.data?.cards || response.data.data || [];
+        const cardsData = response.data.data?.cards || response.data.data || [];
         setCards(cardsData);
       } else {
         setError(response.data.message || 'Failed to fetch cards');
@@ -55,9 +114,7 @@ export default function CardsPage() {
       // Handle axios error responses
       if (err && typeof err === 'object' && 'response' in err) {
         const axiosError = err as {response?: {data?: {message?: string}}};
-        setError(
-          axiosError.response?.data?.message || 'Failed to fetch cards'
-        );
+        setError(axiosError.response?.data?.message || 'Failed to fetch cards');
       } else {
         const errorMessage =
           err instanceof Error ? err.message : 'Failed to fetch cards';
@@ -86,37 +143,15 @@ export default function CardsPage() {
     setFormMode('create');
   };
 
-  const handleSaveCard = async (cardData: any, profilePicture?: File) => {
+  const handleSaveCard = async (
+    cardData: CardFormInput,
+    profilePicture?: File
+  ) => {
     try {
-      setSubmitting(true);
-      
       if (formMode === 'create') {
-        const response = await api.post('/cards', cardData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-          data: (() => {
-            const formData = new FormData();
-            
-            // Add all card data
-            Object.keys(cardData).forEach(key => {
-              if (key === 'contact' || key === 'socialLinks') {
-                formData.append(key, JSON.stringify(cardData[key]));
-              } else if (Array.isArray(cardData[key])) {
-                formData.append(key, JSON.stringify(cardData[key]));
-              } else {
-                formData.append(key, cardData[key]);
-              }
-            });
-
-            // Add profile picture if provided
-            if (profilePicture) {
-              formData.append('profilePicture', profilePicture);
-            }
-
-            return formData;
-          })(),
-        });
+        const formData = buildFormData(cardData, profilePicture);
+        // Let Axios set the multipart Content-Type with proper boundary
+        const response = await api.post('/cards', formData);
 
         if (response.data.success) {
           alert('Card created successfully!');
@@ -128,33 +163,10 @@ export default function CardsPage() {
       } else {
         // Edit mode
         if (!editingCard) return;
-        
-        const response = await api.put(`/cards/${editingCard._id}`, cardData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-          data: (() => {
-            const formData = new FormData();
-            
-            // Add all card data
-            Object.keys(cardData).forEach(key => {
-              if (key === 'contact' || key === 'socialLinks') {
-                formData.append(key, JSON.stringify(cardData[key]));
-              } else if (Array.isArray(cardData[key])) {
-                formData.append(key, JSON.stringify(cardData[key]));
-              } else {
-                formData.append(key, cardData[key]);
-              }
-            });
 
-            // Add profile picture if provided
-            if (profilePicture) {
-              formData.append('profilePicture', profilePicture);
-            }
-
-            return formData;
-          })(),
-        });
+        const formData = buildFormData(cardData, profilePicture);
+        // Let Axios set the multipart Content-Type with proper boundary
+        const response = await api.put(`/cards/${editingCard._id}`, formData);
 
         if (response.data.success) {
           alert('Card updated successfully!');
@@ -164,11 +176,12 @@ export default function CardsPage() {
           alert(response.data.message || 'Failed to update card');
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving card:', error);
-      alert(error.response?.data?.message || 'Failed to save card');
-    } finally {
-      setSubmitting(false);
+      const message =
+        (error as any)?.response?.data?.message ||
+        (error instanceof Error ? error.message : 'Failed to save card');
+      alert(message);
     }
   };
 
@@ -184,12 +197,55 @@ export default function CardsPage() {
 
   const getProfileImageUrl = (card: Card) => {
     if (card.profilePicture) {
-      // Convert Buffer to base64 for display
-      const base64 = Buffer.from(card.profilePicture).toString('base64');
-      return `data:image/jpeg;base64,${base64}`;
+      // If profilePicture is already a string (URL), return it
+      if (typeof card.profilePicture === 'string') {
+        return card.profilePicture;
+      }
+      // If it's a base64 string, return it directly
+      return card.profilePicture;
     }
     return null;
   };
+
+  const getAssignedToDisplay = (assignedTo: Card['assignedTo']) => {
+    if (!assignedTo) return '';
+    if (typeof assignedTo === 'string') return assignedTo;
+    const first = assignedTo.firstName?.trim() || '';
+    const last = assignedTo.lastName?.trim() || '';
+    const name = `${first} ${last}`.trim();
+    return name || assignedTo.email || assignedTo._id;
+  };
+
+  // Map a Card (API shape) to the form's initial data shape
+  const mapCardToInitial = (card: Card): Partial<CardFormInput> => ({
+    fullName: card.fullName || '',
+    title: card.title || '',
+    location: card.location || '',
+    companyName: card.companyName || '',
+    description: card.description || '',
+    assignedTo:
+      typeof card.assignedTo === 'string'
+        ? card.assignedTo
+        : card.assignedTo?.email || '',
+    contact: {
+      phone: card.contact?.phone || '',
+      email: card.contact?.email || '',
+    },
+    socialLinks: {
+      instagram: card.socialLinks?.instagram || '',
+      facebook: card.socialLinks?.facebook || '',
+      twitter: card.socialLinks?.twitter || '',
+    },
+    services: Array.isArray(card.services) && card.services.length
+      ? card.services
+      : [''],
+    products: Array.isArray(card.products) && card.products.length
+      ? card.products
+      : [''],
+    gallery: Array.isArray(card.gallery) && card.gallery.length
+      ? card.gallery
+      : [''],
+  });
 
   if (loading) {
     return (
@@ -232,8 +288,7 @@ export default function CardsPage() {
           </div>
           <button
             onClick={handleCreateCard}
-            className='bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors'
-          >
+            className='bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors'>
             Create New Card
           </button>
         </div>
@@ -262,8 +317,7 @@ export default function CardsPage() {
             </p>
             <button
               onClick={handleCreateCard}
-              className='mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors'
-            >
+              className='mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors'>
               Create Your First Card
             </button>
           </div>
@@ -383,7 +437,10 @@ export default function CardsPage() {
                   {/* Assigned To */}
                   <div className='mb-4'>
                     <p className='text-xs text-gray-500'>
-                      Assigned to: <span className='font-medium'>{card.assignedTo}</span>
+                      Assigned to:{' '}
+                      <span className='font-medium'>
+                        {getAssignedToDisplay(card.assignedTo)}
+                      </span>
                     </p>
                   </div>
 
@@ -395,8 +452,7 @@ export default function CardsPage() {
                     </div>
                     <button
                       onClick={() => handleEditCard(card)}
-                      className='w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-3 rounded-lg text-sm font-medium transition-colors'
-                    >
+                      className='w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-3 rounded-lg text-sm font-medium transition-colors'>
                       Edit Card
                     </button>
                   </div>
@@ -412,7 +468,7 @@ export default function CardsPage() {
         <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'>
           <div className='bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto'>
             <MainCardForm
-              initialData={editingCard || undefined}
+              initialData={editingCard ? mapCardToInitial(editingCard) : undefined}
               onSave={handleSaveCard}
               onCancel={handleCloseForm}
               mode={formMode}

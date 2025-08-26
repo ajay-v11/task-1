@@ -59,7 +59,19 @@ export const createCard = async (
       });
     }
 
-    const {
+    // Debug: Log incoming payload shape
+    try {
+      console.log('[createCard] content-type:', req.headers['content-type']);
+      console.log('[createCard] has body:', typeof req.body !== 'undefined');
+      if (req.body) {
+        console.log('[createCard] body keys before parse:', Object.keys(req.body));
+      }
+      console.log('[createCard] has file:', !!req.file);
+    } catch (e) {}
+
+    // Ensure body exists and parse nested JSON fields if they arrived as strings (multipart/form-data)
+    const rawBody: any = req.body || {};
+    let {
       fullName,
       title,
       location,
@@ -71,7 +83,23 @@ export const createCard = async (
       products,
       gallery,
       assignedTo,
-    } = req.body;
+    } = rawBody;
+
+    try {
+      if (typeof contact === 'string') contact = JSON.parse(contact);
+    } catch (_) {}
+    try {
+      if (typeof socialLinks === 'string') socialLinks = JSON.parse(socialLinks);
+    } catch (_) {}
+    try {
+      if (typeof services === 'string') services = JSON.parse(services);
+    } catch (_) {}
+    try {
+      if (typeof products === 'string') products = JSON.parse(products);
+    } catch (_) {}
+    try {
+      if (typeof gallery === 'string') gallery = JSON.parse(gallery);
+    } catch (_) {}
 
     // The profile picture is now handled by Multer middleware
     const profilePicture = req.file ? req.file.buffer : undefined;
@@ -83,7 +111,7 @@ export const createCard = async (
       !location ||
       !companyName ||
       !description ||
-      !contact?.email ||
+      !(contact && contact.email) ||
       !assignedTo
     ) {
       return res.status(400).json({
@@ -182,7 +210,9 @@ export const updateCard = async (
       });
     }
 
-    const {
+    // Ensure body exists and parse nested JSON fields if they arrived as strings (multipart/form-data)
+    const rawBody: any = req.body || {};
+    let {
       fullName,
       title,
       location,
@@ -194,7 +224,23 @@ export const updateCard = async (
       products,
       gallery,
       assignedTo,
-    } = req.body;
+    } = rawBody;
+
+    try {
+      if (typeof contact === 'string') contact = JSON.parse(contact);
+    } catch (_) {}
+    try {
+      if (typeof socialLinks === 'string') socialLinks = JSON.parse(socialLinks);
+    } catch (_) {}
+    try {
+      if (typeof services === 'string') services = JSON.parse(services);
+    } catch (_) {}
+    try {
+      if (typeof products === 'string') products = JSON.parse(products);
+    } catch (_) {}
+    try {
+      if (typeof gallery === 'string') gallery = JSON.parse(gallery);
+    } catch (_) {}
 
     const updateData: any = {
       fullName,
@@ -337,6 +383,53 @@ export const getCardById = async (
       success: true,
       message: 'Card retrieved successfully',
       data: {card},
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getCardProfileImage = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const {id} = req.params;
+
+    // Validate ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid card ID format',
+      });
+    }
+
+    const card = await Card.findById(id).select('profilePicture');
+    if (!card) {
+      return res.status(404).json({
+        success: false,
+        message: 'Card not found',
+      });
+    }
+
+    if (!card.profilePicture) {
+      return res.status(404).json({
+        success: false,
+        message: 'Profile picture not found',
+      });
+    }
+
+    // Convert Buffer to base64
+    const base64 = card.profilePicture.toString('base64');
+    const mimeType = 'image/jpeg'; // Default to JPEG, you could detect this from the original file
+
+    res.status(200).json({
+      success: true,
+      data: {
+        image: `data:${mimeType};base64,${base64}`,
+        mimeType,
+      },
     });
   } catch (error) {
     next(error);

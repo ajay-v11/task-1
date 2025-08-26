@@ -32,13 +32,7 @@ export type Card = {
   services?: string[];
   products?: string[];
   gallery?: string[];
-  assignedTo: {
-    _id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    role: string;
-  };
+  assignedTo: string; // Changed from object to string (email)
   createdBy: {
     _id: string;
     firstName: string;
@@ -62,7 +56,7 @@ export interface UserRegistrationData {
   password: string;
   firstName: string;
   lastName: string;
-  role: 'user' | 'manager';
+  role: 'user' | 'manager' | 'admin';
 }
 
 // Auth data that comes back from login/register

@@ -16,7 +16,7 @@ const api: AxiosInstance = axios.create({
   baseURL: getBaseURL(),
   timeout: 15000, // Increased timeout
   headers: {
-    'Content-Type': 'application/json',
+    // Do not set global Content-Type; let Axios/browser set it.
     Accept: 'application/json',
   },
 });
@@ -135,7 +135,7 @@ api.interceptors.response.use(
       // Don't auto-redirect here, let the auth store handle it
       const apiError: ApiErrorResponse = {
         success: false,
-        message: error.response.data?.message || 'Unauthorized access',
+        message: (error.response.data as any)?.message || 'Unauthorized access',
       };
       return Promise.reject(apiError);
     }
@@ -179,9 +179,9 @@ export const cardApi = {
   // Create a new card
   create: async (cardData: any, profilePicture?: File) => {
     const formData = new FormData();
-    
+
     // Add all card data
-    Object.keys(cardData).forEach(key => {
+    Object.keys(cardData).forEach((key) => {
       if (key === 'contact' || key === 'socialLinks') {
         formData.append(key, JSON.stringify(cardData[key]));
       } else if (Array.isArray(cardData[key])) {
@@ -196,20 +196,16 @@ export const cardApi = {
       formData.append('profilePicture', profilePicture);
     }
 
-    const response = await api.post('/cards', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const response = await api.post('/cards', formData);
     return response.data;
   },
 
   // Update an existing card
   update: async (cardId: string, cardData: any, profilePicture?: File) => {
     const formData = new FormData();
-    
+
     // Add all card data
-    Object.keys(cardData).forEach(key => {
+    Object.keys(cardData).forEach((key) => {
       if (key === 'contact' || key === 'socialLinks') {
         formData.append(key, JSON.stringify(cardData[key]));
       } else if (Array.isArray(cardData[key])) {
@@ -224,11 +220,7 @@ export const cardApi = {
       formData.append('profilePicture', profilePicture);
     }
 
-    const response = await api.put(`/cards/${cardId}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const response = await api.put(`/cards/${cardId}`, formData);
     return response.data;
   },
 

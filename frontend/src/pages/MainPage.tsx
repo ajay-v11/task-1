@@ -1,18 +1,19 @@
-import { useState } from 'react';
+import {useState} from 'react';
 import MainCard from '../components/Card/Maincard';
 import MainCardForm from '../components/Card/Maincardform';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
 import Placeholder from '../components/Placeholdersection';
-import { useCardData } from '../hooks/use-card-data';
+import {useCardData} from '../hooks/use-card-data';
 
 type ViewMode = 'placeholder' | 'form';
 
 export default function PageComponent() {
   const [viewMode, setViewMode] = useState<ViewMode>('placeholder');
   const [editMode, setEditMode] = useState<'create' | 'edit'>('edit');
-  
-  const { myCard, createCard, updateCard, refreshCards, userRole } = useCardData();
+
+  const {myCard, createCard, updateCard, refreshCards, userRole} =
+    useCardData();
 
   // Check if user can create cards (admin or manager only)
   const canCreateCards = userRole === 'admin' || userRole === 'manager';
@@ -32,7 +33,7 @@ export default function PageComponent() {
   const handleSaveCard = async (data: Record<string, unknown>) => {
     try {
       let result;
-      
+
       if (editMode === 'create') {
         // Create new card
         result = await createCard({
@@ -74,32 +75,40 @@ export default function PageComponent() {
         return (
           <MainCardForm
             mode={editMode}
-            initialData={editMode === 'edit' && myCard ? {
-              fullName: myCard.fullName || '',
-              title: myCard.title || '',
-              location: myCard.location || '',
-              companyName: myCard.companyName || '',
-              description: myCard.description || '',
-              assignedTo: myCard.assignedTo?._id || '',
-              contact: {
-                phone: myCard.contact?.phone || '',
-                email: myCard.contact?.email || '',
-              },
-              socialLinks: {
-                instagram: myCard.socialLinks?.instagram || '',
-                facebook: myCard.socialLinks?.facebook || '',
-                twitter: myCard.socialLinks?.twitter || '',
-              },
-              services: myCard.services?.length ? myCard.services : [''],
-              products: myCard.products?.length ? myCard.products : [''],
-              gallery: myCard.gallery?.length ? myCard.gallery : [''],
-            } : undefined}
+            initialData={
+              editMode === 'edit' && myCard
+                ? {
+                    fullName: myCard.fullName || '',
+                    title: myCard.title || '',
+                    location: myCard.location || '',
+                    companyName: myCard.companyName || '',
+                    description: myCard.description || '',
+                    assignedTo: myCard.assignedTo || '',
+                    contact: {
+                      phone: myCard.contact?.phone || '',
+                      email: myCard.contact?.email || '',
+                    },
+                    socialLinks: {
+                      instagram: myCard.socialLinks?.instagram || '',
+                      facebook: myCard.socialLinks?.facebook || '',
+                      twitter: myCard.socialLinks?.twitter || '',
+                    },
+                    services: myCard.services?.length ? myCard.services : [''],
+                    products: myCard.products?.length ? myCard.products : [''],
+                    gallery: myCard.gallery?.length ? myCard.gallery : [''],
+                  }
+                : undefined
+            }
             onSave={handleSaveCard}
             onCancel={handleCancelEdit}
           />
         );
       default:
-        return <Placeholder onCreateCard={canCreateCards ? handleCreateCard : undefined} />;
+        return (
+          <Placeholder
+            onCreateCard={canCreateCards ? handleCreateCard : undefined}
+          />
+        );
     }
   };
 
@@ -111,16 +120,14 @@ export default function PageComponent() {
         <div className='flex flex-col lg:flex-row gap-4 sm:gap-6'>
           {/* Main Card */}
           <div className='w-full lg:w-[65%]'>
-            <MainCard 
+            <MainCard
               onEdit={handleEditCard}
               onCreate={canCreateCards ? handleCreateCard : undefined}
             />
           </div>
 
           {/* Right Panel - Form or Placeholder */}
-          <div className='w-full lg:w-[35%]'>
-            {renderRightPanel()}
-          </div>
+          <div className='w-full lg:w-[35%]'>{renderRightPanel()}</div>
         </div>
       </main>
 

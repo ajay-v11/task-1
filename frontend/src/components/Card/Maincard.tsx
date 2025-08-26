@@ -14,6 +14,7 @@ import {
   Eye,
 } from 'lucide-react';
 import {useCardData} from '../../hooks/use-card-data';
+import {useAuthStore} from '../../lib/authStore';
 import NoCardMessage from './Nocard';
 import LoadingSpinner from '../LoadingSpinner';
 import QrModal from './Qrmodal';
@@ -51,9 +52,7 @@ type CardType = {
   createdBy?: {
     _id?: string;
   };
-  assignedTo?: {
-    _id?: string;
-  };
+  assignedTo?: string; // Changed from object to string (email)
   // Add optional fields for new tabs
   services?: string[];
   products?: string[];
@@ -80,6 +79,8 @@ export default function MainCard({
       cardData: Partial<CardType>
     ) => Promise<{success: boolean; card?: CardType; error?: string}>;
   };
+
+  const {user} = useAuthStore();
 
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   // 1. Add state for the active tab
@@ -249,11 +250,11 @@ END:VCARD`;
     }
   };
 
-  const canEdit =
+  // Check if user can edit the card
+  const canEditCard =
     userRole === 'admin' ||
-    (userRole === 'manager' &&
-      myCard.createdBy?._id === myCard.assignedTo?._id) ||
-    (userRole === 'user' && myCard.assignedTo?._id === myCard.assignedTo?._id);
+    userRole === 'manager' ||
+    (userRole === 'user' && myCard.assignedTo === user?.email);
 
   let profileImageSrc = 'https://via.placeholder.com/150';
   if (myCard.profilePicture) {
@@ -285,7 +286,7 @@ END:VCARD`;
               'url(https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&h=400&fit=crop)',
           }}>
           <div className='absolute top-4 right-4 flex gap-2'>
-            {canEdit && (
+            {canEditCard && (
               <button
                 onClick={onEdit}
                 className='bg-white/70 backdrop-blur-sm p-2 rounded-full shadow-lg hover:bg-white transition-colors'>

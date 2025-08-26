@@ -1,5 +1,4 @@
-import React, {useState, useEffect} from 'react';
-import {useAuthStore} from '../lib/authStore';
+import {useState, useEffect} from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import LoadingSpinner from '../components/LoadingSpinner';
