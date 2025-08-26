@@ -5,6 +5,17 @@ import {USER_ROLES} from '../constants/roles';
 import {AuthRequest} from '../middlewares/auth.middleware';
 import jwt, {SignOptions} from 'jsonwebtoken';
 
+const generateToken = (userId: string): string => {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET is not defined');
+  }
+  const options: SignOptions = {
+    expiresIn: (process.env.JWT_EXPIRES_IN ||
+      '7d') as jwt.SignOptions['expiresIn'],
+  };
+  return jwt.sign({userId}, process.env.JWT_SECRET as jwt.Secret, options);
+};
+
 export const login = async (
   req: Request,
   res: Response,
@@ -27,24 +38,66 @@ export const login = async (
         message: MESSAGES.ERROR.INVALID_CREDENTIALS,
       });
     }
-    const generateToken = (userId: string): string => {
-      if (!process.env.JWT_SECRET) {
-        throw new Error('JWT_SECRET is not defined');
-      }
-      const options: SignOptions = {
-        expiresIn: (process.env.JWT_EXPIRES_IN ||
-          '7d') as jwt.SignOptions['expiresIn'],
-      };
-      return jwt.sign({userId}, process.env.JWT_SECRET as jwt.Secret, options);
-    };
+
     const token = generateToken(user._id);
+
+    // Set JWT token as HTTP-only cookie
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
 
     res.status(200).json({
       success: true,
       message: MESSAGES.SUCCESS.LOGIN,
       data: {
         user: user.toJSON(),
-        token,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const logout = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // Clear the token cookie
+    res.clearCookie('token');
+
+    res.status(200).json({
+      success: true,
+      message: 'Logged out successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const me = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // req.user is populated by the authenticate middleware
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'User not authenticated',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'User profile retrieved successfully',
+      data: {
+        user: req.user.toJSON(),
       },
     });
   } catch (error) {
@@ -156,10 +209,17 @@ export const createAdmin = async (
       firstName,
       lastName,
       role: USER_ROLES.ADMIN,
-      // createdBy is not required for admin users
     });
 
     await adminUser.save();
+
+    const token = generateToken(adminUser._id);
+
+    // Set JWT token as HTTP-only cookie for the newly created admin
+    res.cookie('token', token, {
+      httpOnly: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
 
     res.status(201).json({
       success: true,

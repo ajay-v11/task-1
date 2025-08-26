@@ -14,16 +14,21 @@ export const authenticate = async (
   next: NextFunction
 ) => {
   try {
-    const authHeader = req.headers.authorization;
+    // Try to get token from cookies first, fallback to Authorization header
+    let token = req.cookies?.token;
+    console.log('token is ', token);
 
-    if (!authHeader || !authHeader.startsWith('Bearer')) {
-      return res.status(401).json({
-        success: false,
-        message: MESSAGES.ERROR.UNAUTHORIZED,
-      });
+    if (!token) {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer')) {
+        return res.status(401).json({
+          success: false,
+          message: MESSAGES.ERROR.UNAUTHORIZED,
+        });
+      }
+      token = authHeader.substring(7);
     }
 
-    const token = authHeader.substring(7);
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
 
     const user = await User.findById(decoded.userId);

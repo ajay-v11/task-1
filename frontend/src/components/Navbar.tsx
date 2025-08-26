@@ -1,10 +1,11 @@
 import {Menu, User, LogOut} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
-import {useAuth} from '../lib/authContext';
+import {useAuthStore} from '../lib/authStore'; // Changed import
 
 export default function Navbar() {
   const navigate = useNavigate();
-  const {state, logout} = useAuth();
+  // Destructure state and actions from the Zustand store
+  const {isAuthenticated, user, logout} = useAuthStore();
 
   const handleLogin = () => {
     navigate('/login');
@@ -21,19 +22,20 @@ export default function Navbar() {
 
   // Helper function to get display name
   const getDisplayName = () => {
-    if (!state.user) return 'Profile';
-    const firstName = state.user.firstName || '';
-    const lastName = state.user.lastName || '';
+    if (!user) return 'Profile';
+    const firstName = user.firstName || '';
+    const lastName = user.lastName || '';
+    // Return first name if available, otherwise the full name.
     return firstName || `${firstName} ${lastName}`.trim() || 'Profile';
   };
 
   // Helper function for full name with role
   const getFullNameWithRole = () => {
-    if (!state.user) return 'Profile';
-    const firstName = state.user.firstName || '';
-    const lastName = state.user.lastName || '';
+    if (!user) return 'Profile';
+    const firstName = user.firstName || '';
+    const lastName = user.lastName || '';
     const fullName = `${firstName} ${lastName}`.trim() || 'User';
-    const role = state.user.role || 'user';
+    const role = user.role || 'user';
     return `${fullName} (${role})`;
   };
 
@@ -73,7 +75,8 @@ export default function Navbar() {
                 className='text-gray-700 hover:text-gray-900 px-3 py-2 text-sm font-medium transition-colors'>
                 Business
               </a>
-              {state.isAuthenticated && state.user?.role === 'admin' && (
+              {/* Conditional rendering based on store state */}
+              {isAuthenticated && user?.role === 'admin' && (
                 <button
                   onClick={() => navigate('/register')}
                   className='text-gray-700 hover:text-gray-900 px-3 py-2 text-sm font-medium transition-colors'>
@@ -85,7 +88,7 @@ export default function Navbar() {
 
           {/* Auth Actions */}
           <div className='flex items-center space-x-4'>
-            {state.isAuthenticated && state.user ? (
+            {isAuthenticated && user ? (
               // Authenticated user actions
               <>
                 {/* Profile Button */}
@@ -97,7 +100,7 @@ export default function Navbar() {
                   <div className='hidden sm:block text-sm'>
                     <span className='font-medium'>{getDisplayName()}</span>
                     <span className='ml-1 text-xs text-gray-500 capitalize'>
-                      ({state.user.role})
+                      ({user.role})
                     </span>
                   </div>
                 </button>

@@ -4,11 +4,11 @@ import {loginSchema, type LoginFormData} from '../lib/schema';
 import {ZodError} from 'zod';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import {useAuth} from '../lib/authContext';
+import {useAuthStore} from '../lib/authStore';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const {state, login, clearError} = useAuth();
+  const {login, clearError, isAuthenticated, isLoading, error} = useAuthStore();
 
   const [formData, setFormData] = useState<LoginFormData>({
     email: '',
@@ -20,10 +20,10 @@ export default function LoginPage() {
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (state.isAuthenticated) {
+    if (isAuthenticated) {
       navigate('/', {replace: true});
     }
-  }, [state.isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate]);
 
   // Clear errors on mount
   useEffect(() => {
@@ -48,7 +48,7 @@ export default function LoginPage() {
     }
 
     // Clear global error when user starts typing
-    if (state.error) {
+    if (error) {
       clearError();
     }
   };
@@ -78,7 +78,7 @@ export default function LoginPage() {
         });
         setValidationErrors(errors);
       }
-      // API errors are handled by the auth context
+      // API errors are handled by the auth store
     }
   };
 
@@ -111,7 +111,7 @@ export default function LoginPage() {
                     : 'border-gray-300 focus:ring-blue-500'
                 }`}
                 placeholder='Enter your email'
-                disabled={state.isLoading}
+                disabled={isLoading}
               />
               {validationErrors.email && (
                 <p className='mt-1 text-sm text-red-600'>
@@ -139,7 +139,7 @@ export default function LoginPage() {
                     : 'border-gray-300 focus:ring-blue-500'
                 }`}
                 placeholder='Enter your password'
-                disabled={state.isLoading}
+                disabled={isLoading}
               />
               {validationErrors.password && (
                 <p className='mt-1 text-sm text-red-600'>
@@ -149,18 +149,18 @@ export default function LoginPage() {
             </div>
 
             {/* API Error Display */}
-            {state.error && (
+            {error && (
               <div className='bg-red-50 border border-red-200 rounded-md p-3'>
-                <p className='text-sm text-red-800'>{state.error}</p>
+                <p className='text-sm text-red-800'>{error}</p>
               </div>
             )}
 
             {/* Submit Button */}
             <button
               type='submit'
-              disabled={state.isLoading}
+              disabled={isLoading}
               className='w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200'>
-              {state.isLoading ? 'Signing In...' : 'Sign In'}
+              {isLoading ? 'Signing In...' : 'Sign In'}
             </button>
           </form>
 

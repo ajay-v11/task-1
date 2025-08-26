@@ -1,5 +1,10 @@
 import {Router} from 'express';
-import {createUser, login, createAdmin} from '../controllers/auth.controller';
+import {
+  createUser,
+  login,
+  createAdmin,
+  me,
+} from '../controllers/auth.controller';
 import {authenticate, authorize} from '../middlewares/auth.middleware';
 import {USER_ROLES} from '../constants/roles';
 
@@ -13,5 +18,6 @@ router.post(
   authorize(USER_ROLES.ADMIN),
   createUser
 );
+router.get('/me', authenticate, me);
 
 export {router as authRoutes};

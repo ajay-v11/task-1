@@ -11,11 +11,16 @@ const app = express();
 
 //Security middlewares
 app.use(helmet());
+// const frontendURL = 'http://localhost:5173';
 app.use(
   cors({
     // origin: process.env.FRONTEND_URL || 'http://localhost:5174',
     // credentials: true,
-    origin: '*',
+    origin: 'http://localhost:5173',
+    credentials: true, // This is crucial for cookies
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    exposedHeaders: ['Set-Cookie'],
   })
 );
 

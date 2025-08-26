@@ -1,18 +1,16 @@
-// src/hooks/useCardData.ts
-
 import {useState, useEffect, useMemo} from 'react';
 import api from '../lib/api';
 import type {Card} from '../lib/types';
-import {useAuth} from '../lib/authContext';
+import {useAuthStore} from '../lib/authStore';
 
 export const useCardData = () => {
-  const {state} = useAuth();
+  const {user, isAuthenticated, isInitialized} = useAuthStore();
   const [cards, setCards] = useState<Card[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchCards = async () => {
-    if (!state.isAuthenticated || !state.user) {
+    if (!isAuthenticated || !user) {
       setCards([]);
       setLoading(false);
       setError(null);
@@ -62,12 +60,12 @@ export const useCardData = () => {
   // Fetch cards when auth state changes
   useEffect(() => {
     // Don't fetch if still initializing
-    if (!state.isInitialized) {
+    if (!isInitialized) {
       return;
     }
 
     // Clear data if not authenticated
-    if (!state.isAuthenticated || !state.user) {
+    if (!isAuthenticated || !user) {
       setCards([]);
       setLoading(false);
       setError(null);
@@ -76,18 +74,16 @@ export const useCardData = () => {
 
     // Fetch cards if authenticated
     fetchCards();
-  }, [state.isAuthenticated, state.user, state.isInitialized]);
+  }, [isAuthenticated, user, isInitialized]);
 
   // Find user's assigned card
   const myCard = useMemo(() => {
-    if (!state.user || cards.length === 0) {
+    if (!user || cards.length === 0) {
       return null;
     }
 
-    return (
-      cards.find((card) => card.assignedTo?._id === state.user?._id) || null
-    );
-  }, [cards, state.user]);
+    return cards.find((card) => card.assignedTo?._id === user._id) || null;
+  }, [cards, user]);
 
   // Calculate statistics
   const stats = useMemo(() => {
@@ -100,7 +96,7 @@ export const useCardData = () => {
 
   // Manual refresh function
   const refreshCards = () => {
-    if (state.isAuthenticated && state.user) {
+    if (isAuthenticated && user) {
       fetchCards();
     }
   };
@@ -118,8 +114,8 @@ export const useCardData = () => {
 
     // Helper properties
     hasCards: cards.length > 0,
-    userRole: state.user?.role || null,
-    isAuthenticated: state.isAuthenticated,
-    isInitialized: state.isInitialized,
+    userRole: user?.role || null,
+    isAuthenticated,
+    isInitialized,
   };
 };

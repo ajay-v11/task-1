@@ -1,6 +1,6 @@
 import React, {useState, useEffect} from 'react';
 import {Link, useNavigate} from 'react-router-dom';
-import {useAuth} from '../lib/authContext';
+import {useAuthStore} from '../lib/authStore'; // Changed import
 import {
   userRegistrationSchema,
   type UserRegistrationFormData,
@@ -11,7 +11,9 @@ import Footer from '../components/Footer';
 
 export default function UserRegisterPage() {
   const navigate = useNavigate();
-  const {createAdmin, state, clearError} = useAuth();
+  // Destructure state and actions from the Zustand store
+  const {createAdmin, isLoading, error, isAuthenticated, clearError} =
+    useAuthStore();
 
   const [formData, setFormData] = useState<UserRegistrationFormData>({
     email: '',
@@ -24,14 +26,13 @@ export default function UserRegisterPage() {
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string>
   >({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (state.isAuthenticated) {
+    if (isAuthenticated) {
       navigate('/');
     }
-  }, [state.isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate]);
 
   // Clear errors when component mounts or form data changes
   useEffect(() => {
@@ -51,20 +52,14 @@ export default function UserRegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
+    // REMOVE setIsSubmitting(true);
     setValidationErrors({});
 
     try {
-      // Validate form data with Zod
       const validatedData = userRegistrationSchema.parse(formData);
-
-      // Attempt admin registration
-      await createAdmin(validatedData);
-
-      // Navigation will be handled by the useEffect above
+      await createAdmin(validatedData); // This will no longer throw on API error
     } catch (error) {
       if (error instanceof ZodError) {
-        // Handle validation errors
         const errors: Record<string, string> = {};
         error.issues.forEach((issue) => {
           if (issue.path[0]) {
@@ -73,10 +68,9 @@ export default function UserRegisterPage() {
         });
         setValidationErrors(errors);
       }
-      // API errors are handled by the auth store
-    } finally {
-      setIsSubmitting(false);
+      // No need to handle API errors here anymore, the store does it.
     }
+    // REMOVE the finally block
   };
 
   return (
@@ -100,6 +94,7 @@ export default function UserRegisterPage() {
 
           <form className='mt-8 space-y-6' onSubmit={handleSubmit}>
             <div className='space-y-4'>
+              {/* First Name Input */}
               <div>
                 <label
                   htmlFor='firstName'
@@ -120,7 +115,7 @@ export default function UserRegisterPage() {
                   placeholder='First Name'
                   value={formData.firstName}
                   onChange={handleInputChange}
-                  disabled={state.isLoading || isSubmitting}
+                  disabled={isLoading}
                 />
                 {validationErrors.firstName && (
                   <p className='mt-1 text-sm text-red-600'>
@@ -129,6 +124,7 @@ export default function UserRegisterPage() {
                 )}
               </div>
 
+              {/* Last Name Input */}
               <div>
                 <label
                   htmlFor='lastName'
@@ -149,7 +145,7 @@ export default function UserRegisterPage() {
                   placeholder='Last Name'
                   value={formData.lastName}
                   onChange={handleInputChange}
-                  disabled={state.isLoading || isSubmitting}
+                  disabled={isLoading}
                 />
                 {validationErrors.lastName && (
                   <p className='mt-1 text-sm text-red-600'>
@@ -158,6 +154,7 @@ export default function UserRegisterPage() {
                 )}
               </div>
 
+              {/* Email Input */}
               <div>
                 <label
                   htmlFor='email'
@@ -178,7 +175,7 @@ export default function UserRegisterPage() {
                   placeholder='Email address'
                   value={formData.email}
                   onChange={handleInputChange}
-                  disabled={state.isLoading || isSubmitting}
+                  disabled={isLoading}
                 />
                 {validationErrors.email && (
                   <p className='mt-1 text-sm text-red-600'>
@@ -187,6 +184,7 @@ export default function UserRegisterPage() {
                 )}
               </div>
 
+              {/* Password Input */}
               <div>
                 <label
                   htmlFor='password'
@@ -207,7 +205,7 @@ export default function UserRegisterPage() {
                   placeholder='Password (min 6 characters)'
                   value={formData.password}
                   onChange={handleInputChange}
-                  disabled={state.isLoading || isSubmitting}
+                  disabled={isLoading}
                 />
                 {validationErrors.password && (
                   <p className='mt-1 text-sm text-red-600'>
@@ -216,6 +214,7 @@ export default function UserRegisterPage() {
                 )}
               </div>
 
+              {/* Role Select */}
               <div>
                 <label
                   htmlFor='role'
@@ -231,7 +230,7 @@ export default function UserRegisterPage() {
                   } text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
                   value={formData.role}
                   onChange={handleInputChange}
-                  disabled={state.isLoading || isSubmitting}>
+                  disabled={isLoading}>
                   <option value='user'>User</option>
                   <option value='admin'>Admin</option>
                   <option value='moderator'>Moderator</option>
@@ -244,7 +243,8 @@ export default function UserRegisterPage() {
               </div>
             </div>
 
-            {state.error && (
+            {/* API Error Display */}
+            {error && (
               <div className='rounded-md bg-red-50 p-4'>
                 <div className='flex'>
                   <div className='ml-3'>
@@ -252,19 +252,20 @@ export default function UserRegisterPage() {
                       Registration failed
                     </h3>
                     <div className='mt-2 text-sm text-red-700'>
-                      <p>{state.error}</p>
+                      <p>{error}</p>
                     </div>
                   </div>
                 </div>
               </div>
             )}
 
+            {/* Submit Button */}
             <div>
               <button
                 type='submit'
-                disabled={state.isLoading || isSubmitting}
+                disabled={isLoading}
                 className='group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed'>
-                {state.isLoading || isSubmitting ? (
+                {isLoading ? (
                   <>
                     <svg
                       className='animate-spin -ml-1 mr-3 h-5 w-5 text-white'
